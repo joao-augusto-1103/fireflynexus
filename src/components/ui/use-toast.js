@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 
-const TOAST_LIMIT = 1
+// Increased toast limit to allow multiple simultaneous toasts
+const TOAST_LIMIT = 5
 
 let count = 0
 function generateId() {
@@ -86,7 +87,7 @@ export function useToast() {
 
       const timeout = setTimeout(() => {
         toast.dismiss()
-      }, toast.duration || 5000)
+      }, toast.duration || 1000)
 
       timeouts.push(timeout)
     })
