@@ -5,10 +5,10 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --config vite.config.vercel.js",
     "preview": "vite preview",
     "start": "vite preview --port 3000 --host",
-    "vercel-build": "vite build"
+    "vercel-build": "vite build --config vite.config.vercel.js"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -28,7 +28,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
-    "firebase": "^12.3.0",
+    "firebase": "^10.7.1",
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.292.0",
     "react": "^18.2.0",

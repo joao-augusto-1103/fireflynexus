@@ -25,7 +25,7 @@
   "env": {
     "NODE_ENV": "production"
   },
-  "buildCommand": "npm run build",
+  "buildCommand": "npx vite build --config vite.config.vercel.js",
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": "vite"

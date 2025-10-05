@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-// https://vitejs.dev/config/
+// Configuração específica para o Vercel
 export default defineConfig({
   plugins: [react()],
   root: '.',
@@ -10,11 +10,6 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  },
-  server: {
-    hmr: {
-      overlay: true
-    }
   },
   build: {
     outDir: 'dist',
@@ -39,5 +34,8 @@ export default defineConfig({
   optimizeDeps: {
     include: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage']
   },
-  base: '/'
+  base: '/',
+  define: {
+    global: 'globalThis',
+  }
 })
