@@ -5,6 +5,7 @@ import { Users, FileText, ShoppingCart, Package, DollarSign, Moon, Sun, Menu, X,
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ClientesModule from '@/components/modules/ClientesModule';
 import OSModule from '@/components/modules/OSModule';
 import OVModule from '@/components/modules/OVModule';
@@ -17,7 +18,7 @@ import Dashboard from '@/components/Dashboard';
 import { t } from '@/lib/translations';
 import Login from '@/components/Login';
 import { toast } from '@/components/ui/use-toast';
-import { useConfiguracao } from '@/lib/hooks/useFirebase';
+import { useConfiguracao, useUsuarios, useConfiguracoesUsuarios } from '@/lib/hooks/useFirebase';
 
 export const AppContext = createContext();
 
@@ -34,9 +35,12 @@ function App() {
   });
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [produtoParaReporEstoque, setProdutoParaReporEstoque] = useState(null);
+  const [showConfigAccessDenied, setShowConfigAccessDenied] = useState(false);
 
   // Usar hook do Firebase para configurações
   const { config: configuracoesRaw, loading: configLoading, saveConfig } = useConfiguracao();
+  const { data: usuarios } = useUsuarios();
+  const { config: configUsuarios } = useConfiguracoesUsuarios();
   
   // Estado para configurações locais (atualização imediata)
   const [configuracoesLocais, setConfiguracoesLocais] = useState(null);
@@ -64,6 +68,16 @@ function App() {
 
   const limparProdutoParaReporEstoque = () => {
     setProdutoParaReporEstoque(null);
+  };
+
+  // Função para verificar acesso às configurações
+  const handleConfigClick = () => {
+    const userType = usuarioLogado?.tipo || 'comum';
+    if (userType === 'administrador') {
+      setActiveModule('configuracoes');
+    } else {
+      setShowConfigAccessDenied(true);
+    }
   };
 
   // Carregar configurações e verificar migração
@@ -164,53 +178,14 @@ function App() {
       console.log('[App] Tema aplicado:', config.tema);
     }
 
-    // Aplicar cores CSS dinamicamente
-    if (config.corPrimaria) {
-      document.documentElement.style.setProperty('--primary-color', config.corPrimaria);
-      document.documentElement.style.setProperty('--primary-500', config.corPrimaria);
-      document.documentElement.style.setProperty('--primary-600', ajustarCor(config.corPrimaria, -20));
-      console.log('[App] Cor primária aplicada:', config.corPrimaria);
-    }
-    if (config.corSecundaria) {
-      document.documentElement.style.setProperty('--secondary-color', config.corSecundaria);
-      document.documentElement.style.setProperty('--secondary-500', config.corSecundaria);
-      document.documentElement.style.setProperty('--secondary-600', ajustarCor(config.corSecundaria, -20));
-      console.log('[App] Cor secundária aplicada:', config.corSecundaria);
-    }
+    // Cores dinâmicas removidas - usando cores padrão do sistema
 
-    // Atualizar logo e nome da empresa no header
-    if (config.logo) {
-      const logoElement = document.querySelector('img[alt="Logo da empresa"]');
-      if (logoElement) {
-        logoElement.src = config.logo;
-      } else {
-        console.warn('[App] Elemento de logo não encontrado no DOM.');
-      }
-    }
-    if (config.nomeEmpresa) {
-      document.title = config.nomeEmpresa;
-      const headerElement = document.querySelector('h1.text-xl');
-      if (headerElement) {
-        headerElement.textContent = config.nomeEmpresa;
-      } else {
-        console.warn('[App] Elemento de nome da empresa não encontrado no DOM.');
-      }
-    }
+    // Logo e nome da empresa removidos - usando nome fixo "Firefly Nexus"
 
     // Configurações aplicadas visualmente (sem toast para evitar duplicação)
   };
 
-  // Função para ajustar cor (escurecer/clarear)
-  const ajustarCor = (hex, percent) => {
-    const num = parseInt(hex.replace("#", ""), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = (num >> 16) + amt;
-    const G = (num >> 8 & 0x00FF) + amt;
-    const B = (num & 0x0000FF) + amt;
-    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-      (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
-  };
+  // Função de ajuste de cor removida - cores dinâmicas não são mais usadas
 
   useEffect(() => {
     const handleResize = () => {
@@ -232,13 +207,12 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Permissões por tipo de usuário
-  // Adicionei um fallback para o tipo de usuário caso esteja undefined
-  const getModulesByTipo = (tipo) => {
-    console.log('[App] ===== DETERMINANDO MÓDULOS =====');
-    console.log('[App] Tipo do usuário recebido:', tipo);
+  // Sistema de permissões baseado no usuário logado
+  const getModulesByPermissions = (usuario) => {
+    console.log('[App] ===== DETERMINANDO MÓDULOS POR PERMISSÕES =====');
+    console.log('[App] Usuário recebido:', usuario);
     
-    const all = [
+    const allModules = [
       { id: 'dashboard', name: 'nav.dashboard', icon: LayoutDashboard },
       { id: 'clientes', name: 'nav.clientes', icon: Users },
       { id: 'os', name: 'nav.os', icon: FileText },
@@ -250,23 +224,37 @@ function App() {
       { id: 'configuracoes', name: 'nav.configuracoes', icon: Settings }
     ];
 
+    // Administradores têm acesso total
+    if (usuario?.tipo === 'administrador') {
+      console.log('[App] Usuário administrador - acesso total');
+      return allModules;
+    }
 
-    // Tratar 'administrador' como 'admin'
-    const userType = tipo === 'administrador' ? 'admin' : tipo || 'comum';
-    console.log('[App] Tipo de usuário processado:', userType);
+    // Buscar permissões das configurações de usuários
+    const permissoes = configUsuarios?.permissoes || {};
 
-    const result =
-      userType === 'admin' ? all :
-      userType === 'financeiro' ? all.filter(m => ['dashboard','clientes','os','ov','estoque','caixa','financeiro','configuracoes'].includes(m.id)) :
-      userType === 'comum' ? all.filter(m => ['dashboard','clientes','os','ov','estoque','caixa','configuracoes'].includes(m.id)) :
-      all.filter(m => m.id === 'dashboard');
+    console.log('[App] Configurações de usuários:', configUsuarios);
+    console.log('[App] Permissões globais:', permissoes);
 
-    console.log('[App] Módulos permitidos para tipo', userType, ':', result.map(m => m.id));
+    // Filtrar módulos baseado nas permissões de visualização
+    const modulesPermitidos = allModules.filter(module => {
+      // Dashboard sempre disponível
+      if (module.id === 'dashboard') return true;
+      
+      // Configurações só para administradores (já verificado acima)
+      if (module.id === 'configuracoes') return false;
+      
+      // Verificar permissão de visualização para outros módulos
+      const permissaoVisualizar = permissoes[module.id]?.visualizar;
+      return permissaoVisualizar === true;
+    });
+
+    console.log('[App] Módulos permitidos:', modulesPermitidos.map(m => m.id));
     console.log('[App] ===== FIM DETERMINAÇÃO MÓDULOS =====');
-    return result;
+    return modulesPermitidos;
   };
 
-  const modules = getModulesByTipo(usuarioLogado?.tipo);
+  const modules = getModulesByPermissions(usuarioLogado);
 
   const renderActiveModule = () => {
     console.log('[App] Renderizando módulo ativo:', activeModule);
@@ -440,7 +428,12 @@ function App() {
                     <button
                       key={module.id}
                       onClick={() => {
-                        setActiveModule(module.id);
+                        // Verificar acesso às configurações
+                        if (module.id === 'configuracoes') {
+                          handleConfigClick();
+                        } else {
+                          setActiveModule(module.id);
+                        }
                         // Fechar sidebar em mobile após clicar
                         if (window.innerWidth < 1024) {
                           setSidebarOpen(false);
@@ -518,6 +511,29 @@ function App() {
         </div>
       </>
       <Toaster />
+      
+      {/* Modal de Acesso Negado às Configurações */}
+      <Dialog open={showConfigAccessDenied} onOpenChange={setShowConfigAccessDenied}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-red-600" />
+              Acesso Restrito
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              O módulo de configurações é acessível apenas para usuários administradores.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="pt-4">
+            <Button 
+              onClick={() => setShowConfigAccessDenied(false)}
+              className="w-full"
+            >
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppContext.Provider>
   );
 

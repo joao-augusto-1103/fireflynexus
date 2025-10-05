@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { useDropzone } from 'react-dropzone';
 import { AppContext } from '@/App';
-import { useClientes, useOV, useOS } from '@/lib/hooks/useFirebase';
+import { useClientes, useOV, useOS, usePermissions } from '@/lib/hooks/useFirebase';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
 
 const ClientesModule = ({ userId }) => {
@@ -21,6 +21,7 @@ const ClientesModule = ({ userId }) => {
   const { data: clientes, loading, save, remove } = useClientes(userId);
   const { data: ordens } = useOV(userId);
   const { data: ordensServico } = useOS(userId);
+  const { canCreate, canEdit, canDelete } = usePermissions();
   
   // Estados principais
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,6 +66,13 @@ const ClientesModule = ({ userId }) => {
   const { toast } = useToast();
 
   const handleOpenDialog = (cliente = null) => {
+    // Verificar permissões
+    if (cliente) {
+      if (!canEdit('clientes')) return;
+    } else {
+      if (!canCreate('clientes')) return;
+    }
+
     if (cliente) {
       setEditingCliente(cliente);
       // Garantir que todos os campos existam, mesmo se o cliente não tiver todos os dados
@@ -187,6 +195,9 @@ const ClientesModule = ({ userId }) => {
   };
 
   const handleDeleteClick = (cliente) => {
+    // Verificar permissão de exclusão
+    if (!canDelete('clientes')) return;
+    
     setClienteToDelete(cliente);
     setConfirmDeleteOpen(true);
   };
@@ -691,7 +702,7 @@ const ClientesModule = ({ userId }) => {
                             ...formData, 
                             preferencias: {...formData.preferencias, formaContato: value}
                           })}>
-                            <SelectTrigger>
+                            <SelectTrigger id="formaContato">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

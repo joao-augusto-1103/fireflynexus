@@ -89,8 +89,7 @@ const RemoverUsuarioModal = ({ usuario, isOpen, onClose, onConfirm }) => {
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-1 rounded">
-                    {usuario.tipo === 'admin' ? t('usuarios.tipos.admin', appLanguage) :
-                     usuario.tipo === 'financeiro' ? t('usuarios.tipos.financeiro', appLanguage) :
+                    {usuario.tipo === 'administrador' ? 'Administrador' :
                      t('usuarios.tipos.comum', appLanguage)}
                   </span>
                   <span className={`text-xs px-2 py-1 rounded ${

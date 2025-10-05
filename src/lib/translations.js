@@ -34,14 +34,7 @@ export const translations = {
     'config.tema.light': 'Claro',
     'config.tema.dark': 'Escuro',
     'config.tema.system': 'Sistema',
-    'config.corPrimaria': 'Cor Primária',
-    'config.corPrimaria.descricao': 'Cor principal usada em botões, links e elementos destacados',
-    'config.corSecundaria': 'Cor Secundária',
-    'config.corSecundaria.descricao': 'Cor complementar usada em gradientes e elementos secundários',
-    'config.nomeEmpresa': 'Nome da Empresa',
-    'config.nomeEmpresa.descricao': 'Nome que aparecerá no cabeçalho e título do sistema',
-    'config.logoEmpresa': 'Logo da Empresa',
-    'config.logoEmpresa.descricao': 'Imagem que aparecerá no cabeçalho do sistema',
+    // Campos removidos: corPrimaria, corSecundaria, nomeEmpresa, logoEmpresa
     'config.idioma': 'Idioma',
     'config.idioma.descricao': 'Idioma principal da interface do usuário',
     'config.idioma.pt-BR': 'Português (Brasil)',
@@ -264,7 +257,6 @@ export const translations = {
 
     // User Types
     'usuarios.tipos.admin': 'Administrator',
-    'usuarios.tipos.financeiro': 'Financial',
     'usuarios.tipos.comum': 'Common',
 
     // User Status

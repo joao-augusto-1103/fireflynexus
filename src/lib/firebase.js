@@ -27,4 +27,21 @@ export const auth = getAuth(app);
 //   connectAuthEmulator(auth, 'http://localhost:9099');
 // }
 
+// Configuração para ignorar erros de extensões do navegador
+if (process.env.NODE_ENV === 'development') {
+  // Ignorar erros CORS de extensões do navegador
+  const originalConsoleError = console.error;
+  console.error = function(...args) {
+    const message = args.join(' ');
+    // Ignorar erros de extensões conhecidas
+    if (message.includes('dlnk.one') || 
+        message.includes('content.js') || 
+        message.includes('CORS policy') ||
+        message.includes('Access-Control-Allow-Origin')) {
+      return; // Não exibir no console
+    }
+    originalConsoleError.apply(console, args);
+  };
+}
+
 export default app;

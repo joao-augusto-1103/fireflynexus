@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { AppContext } from '@/App';
-import { useOS, useClientes, useFinanceiro, useConfiguracoesLoja, useCaixa } from '@/lib/hooks/useFirebase';
+import { useOS, useClientes, useFinanceiro, useConfiguracoesLoja, useCaixa, usePermissions } from '@/lib/hooks/useFirebase';
 import { firebaseService } from '@/lib/firebaseService';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
 import CustomerAvatar from '@/components/ui/customer-avatar';
@@ -20,8 +20,9 @@ const OSModule = ({ userId }) => {
   // Usar hooks do Firebase
   const { data: ordens, loading: ordensLoading, save: saveOS, remove: removeOS } = useOS();
   const { data: clientes, save: saveCliente } = useClientes();
-  const { save: saveFinanceiro } = useFinanceiro();
+  const { data: financeiro, save: saveFinanceiro } = useFinanceiro();
   const { data: caixaData, save: saveCaixa } = useCaixa();
+  const { canCreate, canEdit, canDelete } = usePermissions();
   
   // Estados para busca de clientes
   const [buscaCliente, setBuscaCliente] = useState('');
@@ -54,15 +55,17 @@ const OSModule = ({ userId }) => {
   });
   const { toast } = useToast();
 
-  console.log('[OS] ===== DADOS CARREGADOS =====');
-  console.log('[OS] Ordens:', ordens);
-  console.log('[OS] Clientes:', clientes);
-  console.log('[OS] Loading:', ordensLoading);
 
 
   const handleOpenDialog = (os = null) => {
     try {
-      console.log('[OS] Abrindo dialog para OS:', os);
+      
+      // Verificar permissões
+      if (os) {
+        if (!canEdit('os')) return;
+      } else {
+        if (!canCreate('os')) return;
+      }
       
       if (os) {
         setEditingOS(os);
@@ -80,7 +83,6 @@ const OSModule = ({ userId }) => {
           formasPagamento: os.formasPagamento || [{ id: Date.now(), tipo: os.formaPagamento || 'dinheiro', valor: parseFloat(os.valor) || 0, observacao: '' }],
           parcelamento: os.parcelamento || { ativo: false, parcelas: 1, intervalo: 'mensal' }
         });
-        console.log('[OS] Editando OS:', os);
       } else {
         setEditingOS(null);
         setFormData({ 
@@ -96,11 +98,9 @@ const OSModule = ({ userId }) => {
           formasPagamento: [{ id: Date.now(), tipo: 'dinheiro', valor: 0, observacao: '' }],
           parcelamento: { ativo: false, parcelas: 1, intervalo: 'mensal' }
         });
-        console.log('[OS] Nova OS, formulário limpo');
       }
       
       openDialog('os');
-      console.log('[OS] Dialog de OS aberto');
     } catch (error) {
       console.error('[OS] Erro ao abrir dialog:', error);
       toast({
@@ -113,14 +113,83 @@ const OSModule = ({ userId }) => {
 
   const handleCloseDialog = () => {
   closeDialog('os');
-  console.log('[OS] Dialog de OS fechado');
+  };
+
+  // Função para atualizar entrada financeira existente
+  const updateExistingFinanceiroEntry = async (existingEntry, os) => {
+    try {
+      // Determinar forma de pagamento (múltiplas formas ou única)
+      const formasPagamentoDetalhadas = os.formasPagamento && os.formasPagamento.length > 0 
+        ? os.formasPagamento 
+        : [{ tipo: os.formaPagamento || 'dinheiro', valor: parseFloat(os.valor) }];
+      
+      // Forma de pagamento principal para compatibilidade
+      const formaPagamentoPrincipal = formasPagamentoDetalhadas[0].tipo;
+
+      // Determinar cliente
+      const clienteNome = os.cliente || os.clienteNome || 'Cliente não informado';
+      const clienteTelefone = os.telefone || os.clienteTelefone || '';
+      const clienteId = os.clienteId || '';
+
+      // Criar entrada financeira atualizada (com ou sem parcelamento)
+      const valorParcela = os.parcelamento && os.parcelamento.ativo && os.parcelamento.parcelas > 1 
+        ? parseFloat(os.valor) / os.parcelamento.parcelas 
+        : parseFloat(os.valor);
+
+      const updatedEntry = {
+        ...existingEntry,
+        descricao: `Recebimento da OS: ${os.numero}`,
+        valor: parseFloat(os.valor),
+        status: os.parcelamento && os.parcelamento.ativo && os.parcelamento.parcelas > 1 ? 'Pendente' : 'Concluído',
+        formaPagamento: formaPagamentoPrincipal,
+        cliente: clienteNome,
+        telefone: clienteTelefone,
+        clienteId: clienteId,
+        observacoes: `Ordem de Serviço ${os.numero} - ${clienteNome}${formasPagamentoDetalhadas.length > 1 ? ` - Pagamento: ${formasPagamentoDetalhadas.map(fp => `${fp.tipo} (R$ ${fp.valor.toFixed(2)})`).join(', ')}` : ''}`,
+        parcelamento: os.parcelamento && os.parcelamento.ativo && os.parcelamento.parcelas > 1 ? {
+          ativo: true,
+          parcelas: os.parcelamento.parcelas,
+          intervalo: os.parcelamento.intervalo,
+          valorParcela: valorParcela,
+          parcelasGeradas: existingEntry.parcelamento?.parcelasGeradas || [],
+          parcelasPagas: existingEntry.parcelamento?.parcelasPagas || 0
+        } : {
+          ativo: false,
+          parcelas: 1,
+          intervalo: 'mensal',
+          valorParcela: parseFloat(os.valor),
+          parcelasGeradas: [],
+          parcelasPagas: 0
+        },
+        formasPagamento: formasPagamentoDetalhadas,
+        updatedAt: new Date().toISOString()
+      };
+      
+      await saveFinanceiro(updatedEntry, existingEntry.id);
+      
+    } catch (error) {
+      console.error('[OS] ❌ Erro ao atualizar entrada financeira existente:', error);
+      throw error;
+    }
   };
 
   const updateFinanceiro = async (os, action) => {
     try {
-      console.log('[OS] 🔄 Iniciando atualização do financeiro para OS:', os.numero);
       
-      if (action === 'add') {
+      if (action === 'add' || action === 'update') {
+        // Verificar se já existe uma entrada financeira para esta OS
+        const existingEntry = financeiro.find(entry => entry.origemId === `os-${os.id}`);
+        
+        
+        if (existingEntry && action === 'add') {
+          return;
+        }
+        
+        if (existingEntry && action === 'update') {
+          // Atualizar entrada existente
+          await updateExistingFinanceiroEntry(existingEntry, os);
+          return;
+        }
         // Determinar forma de pagamento (múltiplas formas ou única)
         const formasPagamentoDetalhadas = os.formasPagamento && os.formasPagamento.length > 0 
           ? os.formasPagamento 
@@ -171,15 +240,10 @@ const OSModule = ({ userId }) => {
           createdAt: new Date().toISOString()
         };
         
-        console.log('[OS] 📝 Nova entrada financeira criada:', newEntry);
         await saveFinanceiro(newEntry);
-        console.log('[OS] ✅ Entrada financeira salva no Firebase');
         
       } else if (action === 'remove') {
-        console.log('[OS] 🗑️ Removendo entrada financeira para OS:', os.numero);
         // Para remover, seria necessário implementar uma função específica no hook
-        // Por enquanto, apenas logamos a intenção
-        console.log('[OS] ⚠️ Remoção de entrada financeira não implementada ainda');
       }
       
     } catch (error) {
@@ -194,17 +258,14 @@ const OSModule = ({ userId }) => {
 
   const updateCaixa = async (os) => {
     try {
-      console.log('[OS] 🔄 Iniciando atualização do caixa para OS:', os.numero);
       
       // Verificar se há caixa aberto
       const caixaAberto = caixaData?.find(caixa => caixa.status === 'aberto');
       
       if (!caixaAberto) {
-        console.log('[OS] ⚠️ Nenhum caixa aberto encontrado, não será adicionada transação');
         return;
       }
       
-      console.log('[OS] ✅ Caixa aberto encontrado:', caixaAberto.id);
       
       // Criar transação de entrada no caixa
       const novaTransacao = {
@@ -218,7 +279,6 @@ const OSModule = ({ userId }) => {
         categoria: 'servico'
       };
 
-      console.log('[OS] 📝 Nova transação criada:', novaTransacao);
 
       // Atualizar caixa com nova transação
       const caixaAtualizado = {
@@ -226,9 +286,7 @@ const OSModule = ({ userId }) => {
         transacoes: [...(caixaAberto.transacoes || []), novaTransacao]
       };
 
-      console.log('[OS] 💾 Salvando caixa atualizado...');
       await saveCaixa(caixaAtualizado, caixaAberto.id);
-      console.log('[OS] ✅ Transação adicionada ao caixa com sucesso!');
       
     } catch (error) {
       console.error('[OS] ❌ Erro ao atualizar caixa:', error);
@@ -268,9 +326,8 @@ const OSModule = ({ userId }) => {
         createdAt: editingOS ? editingOS.createdAt : new Date().toISOString()
       };
       
-      console.log('[OS] Dados da OS:', newOS);
-
       // Se não está editando e tem cliente, verificar se precisa cadastrar
+      
       if (!editingOS && formData.clienteNome.trim()) {
         // Buscar cliente existente
         clienteExistente = clientes.find(c => 
@@ -296,12 +353,13 @@ const OSModule = ({ userId }) => {
             };
             
             const clienteSalvo = await saveCliente(novoCliente);
+            
             newOS.clienteId = clienteSalvo.id || Date.now();
             newOS.clienteNome = formData.clienteNome.trim();
             newOS.clienteTelefone = formData.clienteTelefone.trim();
             clienteFoiCadastrado = true;
           } catch (error) {
-            console.error('Erro ao cadastrar cliente:', error);
+            console.error('[OS] ❌ Erro ao cadastrar cliente:', error);
             // Mesmo com erro, salvar na OS sem cliente
             newOS.clienteId = '';
           }
@@ -309,9 +367,6 @@ const OSModule = ({ userId }) => {
       }
 
       await saveOS(newOS, editingOS?.id);
-      console.log('[OS] OS salva com sucesso:', newOS);
-      console.log('[OS] ClienteId da OS:', newOS.clienteId);
-      console.log('[OS] Total da OS:', newOS.total);
 
     if (editingOS) {
       toast({
@@ -334,14 +389,19 @@ const OSModule = ({ userId }) => {
       });
     }
 
+    // Atualizar financeiro baseado no status e se está editando
     if (newOS.status === 'Concluída') {
-        await updateFinanceiro(newOS, 'add');
+        if (editingOS) {
+          // Se está editando uma OS existente, atualizar o registro financeiro
+          await updateFinanceiro(newOS, 'update');
+        } else {
+          // Se é uma nova OS, criar registro financeiro
+          await updateFinanceiro(newOS, 'add');
+        }
         // Adicionar ao caixa se estiver aberto
         await updateCaixa(newOS);
-        console.log('[OS] ✅ OS criada como concluída e adicionada ao caixa');
     } else {
         await updateFinanceiro(newOS, 'remove');
-        console.log('[OS] ✅ OS criada sem adicionar ao caixa');
     }
 
       setFormData({ clienteNome: '', clienteTelefone: '', clienteId: '', endereco: '', titulo: '', marcaModelo: '', senha: '', valor: '', observacoes: '', status: 'Pendente' });
@@ -358,6 +418,9 @@ const OSModule = ({ userId }) => {
   };
 
   const handleDeleteClick = (os) => {
+    // Verificar permissão de exclusão
+    if (!canDelete('os')) return;
+    
     setOsToDelete(os);
     setConfirmDeleteOpen(true);
   };
@@ -368,7 +431,6 @@ const OSModule = ({ userId }) => {
     try {
       await updateFinanceiro(osToDelete, 'remove');
       
-      console.log('[OS] Removendo OS:', osToDelete.id);
       await removeOS(osToDelete.id);
       
       toast({
@@ -406,10 +468,8 @@ const OSModule = ({ userId }) => {
         await updateFinanceiro(updatedOS, 'add');
         // Adicionar ao caixa se estiver aberto
         await updateCaixa(updatedOS);
-        console.log('[OS] ✅ OS marcada como concluída e adicionada ao caixa');
       } else {
         await updateFinanceiro(updatedOS, 'remove');
-        console.log('[OS] ✅ OS removida do financeiro');
       }
       
       toast({
@@ -1215,7 +1275,7 @@ const OSModule = ({ userId }) => {
                   <div>
                     <Label htmlFor="status" className="text-sm font-medium text-slate-700 dark:text-slate-300">Status</Label>
                     <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
-                      <SelectTrigger className="mt-1 bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                      <SelectTrigger id="status" className="mt-1 bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1467,13 +1527,13 @@ const OSModule = ({ userId }) => {
                               value={formData.parcelamento?.intervalo || 'mensal'} 
                               onValueChange={(value) => setFormData({
                                 ...formData,
-                                parcelamento: {
-                                  ...formData.parcelamento,
-                                  intervalo: value
+                                parcelamento: { 
+                                  ...formData.parcelamento, 
+                                  intervalo: value 
                                 }
                               })}
                             >
-                              <SelectTrigger className="mt-1 h-8 text-sm">
+                              <SelectTrigger id="intervaloOS" className="mt-1 h-8 text-sm">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>

@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Rnd } from 'react-rnd'; // Import para redimensionamento
 import { useDropzone } from 'react-dropzone'; // Import para arrasta e solta
 
-import { useProdutos, useCategorias, useMovimentacoes } from '@/lib/hooks/useFirebase';
+import { useProdutos, useCategorias, useMovimentacoes, usePermissions, useConfiguracao, useGruposOpcoes, useOpcoes } from '@/lib/hooks/useFirebase';
 import { AppContext } from '@/App';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
 
@@ -25,6 +25,13 @@ const EstoqueModule = () => {
   const { data: categorias, loading: categoriasLoading, save: saveCategoria, remove: removeCategoria } = useCategorias();
   const { data: produtos, loading: produtosLoading, save: saveProduto, remove: removeProduto } = useProdutos();
   const { data: movimentacoes, loading: movimentacoesLoading, save: saveMovimentacao, remove: removeMovimentacao } = useMovimentacoes();
+  const { canCreate, canEdit, canDelete } = usePermissions();
+  const { config: configuracoes } = useConfiguracao();
+  const { data: gruposOpcoes, save: saveGrupoOpcao, remove: removeGrupoOpcao } = useGruposOpcoes();
+  const { data: opcoes, save: saveOpcao, remove: removeOpcao } = useOpcoes();
+
+  // Verificar se a funcionalidade de grupos e opções está ativada
+  const gruposEOpcoesAtivo = configuracoes?.gruposEOpcoesAtivo || false;
   
   const [searchTerm, setSearchTerm] = useState('');
   const [movementSearchTerm, setMovementSearchTerm] = useState('');
@@ -149,7 +156,8 @@ const EstoqueModule = () => {
         setMostrarSugestoes(false);
       }
       
-      setIsMovDialogOpen(true);
+      if (!canCreate('estoque')) return;
+    setIsMovDialogOpen(true);
       closeDialog('movimentacao');
     }
   }, [dialogs, closeDialog, produtoParaReporEstoque, limparProdutoParaReporEstoque]);
@@ -158,6 +166,14 @@ const EstoqueModule = () => {
 
   const handleSubmitCategoria = async (e) => {
     e.preventDefault();
+    
+    // Verificar permissões
+    if (editingCategoria) {
+      if (!canEdit('estoque')) return;
+    } else {
+      if (!canCreate('estoque')) return;
+    }
+    
     if (!catForm.nome) {
       toast({ title: "Erro", description: "Nome da categoria é obrigatório!", variant: "destructive" });
       return;
@@ -232,6 +248,13 @@ const EstoqueModule = () => {
 
   const handleSubmitProduto = async (e) => {
     e.preventDefault();
+
+    // Verificar permissões
+    if (editingProduto) {
+      if (!canEdit('estoque')) return;
+    } else {
+      if (!canCreate('estoque')) return;
+    }
 
     console.log('[Estoque] ===== INICIANDO CADASTRO DE PRODUTO =====');
     console.log('[Estoque] FormData:', formData);
@@ -320,6 +343,9 @@ const EstoqueModule = () => {
   };
 
   const handleEditProduto = (produto) => {
+    // Verificar permissão de edição
+    if (!canEdit('estoque')) return;
+    
     setFormData({
       nome: produto.nome,
       codigo: produto.codigo,
@@ -345,6 +371,7 @@ const EstoqueModule = () => {
       observacao: `Reposição de estoque - ${produto.nome}`
     });
     setBuscaProduto(produto.nome);
+    if (!canCreate('estoque')) return;
     setIsMovDialogOpen(true);
     setIsEstoqueCriticoModalOpen(false);
   };
@@ -366,6 +393,9 @@ const EstoqueModule = () => {
   };
 
   const handleDeleteProdutoClick = (produto) => {
+    // Verificar permissão de exclusão
+    if (!canDelete('estoque')) return;
+    
     setItemToDelete(produto);
     setDeleteType('produto');
     setConfirmDeleteOpen(true);
@@ -891,6 +921,10 @@ const EstoqueModule = () => {
 
   const handleMovimentacao = async (e) => {
     e.preventDefault();
+    
+    // Verificar permissão de criação
+    if (!canCreate('estoque')) return;
+    
     if (!movData.produtoId || !movData.quantidade) {
       toast({ title: "Erro", description: "Produto e quantidade são obrigatórios!", variant: "destructive" });
       return;
@@ -1468,7 +1502,12 @@ const EstoqueModule = () => {
               Todos os Produtos
             </Button>
             <Button
-              onClick={() => { setEditingCategoria(null); setCatForm({ nome: '', cor: '#8b5cf6', oculto: false }); setIsCatDialogOpen(true); }}
+              onClick={() => { 
+                if (!canCreate('estoque')) return;
+                setEditingCategoria(null); 
+                setCatForm({ nome: '', cor: '#8b5cf6', oculto: false }); 
+                setIsCatDialogOpen(true); 
+              }}
               variant="outline"
               className="w-full justify-start bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white border-violet-500 hover:border-violet-600 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
             >
@@ -1479,7 +1518,7 @@ const EstoqueModule = () => {
           </div>
 
           <div className="mt-4 space-y-1">
-            {[...categorias].sort((a, b) => (a.ordem || 0) - (b.ordem || 0)).map(cat => (
+            {[...categorias].sort((a, b) => (a.ordem ?? 999) - (b.ordem ?? 999)).map(cat => (
               <div key={cat.id} className="flex items-center justify-between group relative">
                 <Button
                   onClick={() => setCategoriaSelecionada(cat.id)}
@@ -1507,7 +1546,12 @@ const EstoqueModule = () => {
                 <button 
                   title="Editar categoria" 
                   className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 opacity-100 transition-opacity"
-                  onClick={() => { setEditingCategoria(cat); setCatForm({ nome: cat.nome, cor: cat.cor || '#8b5cf6', oculto: cat.oculto || false }); setIsCatDialogOpen(true); }}
+                  onClick={() => { 
+                    if (!canEdit('estoque')) return;
+                    setEditingCategoria(cat); 
+                    setCatForm({ nome: cat.nome, cor: cat.cor || '#8b5cf6', oculto: cat.oculto || false }); 
+                    setIsCatDialogOpen(true); 
+                  }}
                 >
                   <Edit className="h-4 w-4" />
                 </button>
@@ -1534,7 +1578,7 @@ const EstoqueModule = () => {
         <div className="flex-1">
           {/* TABS - MOVIDAS PARA CIMA */}
           <Tabs defaultValue="produtos" className="mb-6">
-            <TabsList className="h-16 px-2 bg-slate-100 dark:bg-slate-700 relative overflow-hidden w-full">
+            <TabsList className={`h-16 px-2 bg-slate-100 dark:bg-slate-700 relative overflow-hidden w-full ${gruposEOpcoesAtivo ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <TabsTrigger 
                 value="produtos" 
                 className="px-8 py-4 relative z-10 data-[state=active]:bg-orange-500 data-[state=active]:shadow-lg data-[state=active]:text-white dark:data-[state=active]:bg-orange-500 dark:data-[state=active]:text-white transition-all duration-300 ease-in-out hover:bg-orange-100 dark:hover:bg-orange-900/30 text-base font-medium flex-1 border-2 border-orange-500/30 hover:border-orange-500/60 data-[state=active]:border-orange-500"
@@ -1542,6 +1586,17 @@ const EstoqueModule = () => {
                 <Package className="h-5 w-5 mr-3 transition-transform duration-200" />
                 Produtos
               </TabsTrigger>
+              
+              {gruposEOpcoesAtivo && (
+                <TabsTrigger 
+                  value="opcoes" 
+                  className="px-8 py-4 relative z-10 data-[state=active]:bg-purple-500 data-[state=active]:shadow-lg data-[state=active]:text-white dark:data-[state=active]:bg-purple-500 dark:data-[state=active]:text-white transition-all duration-300 ease-in-out hover:bg-purple-100 dark:hover:bg-purple-900/30 text-base font-medium flex-1 border-2 border-purple-500/30 hover:border-purple-500/60 data-[state=active]:border-purple-500"
+                >
+                  <Settings className="h-5 w-5 mr-3 transition-transform duration-200" />
+                  Opções
+                </TabsTrigger>
+              )}
+              
               <TabsTrigger 
                 value="movimentacoes" 
                 className="px-8 py-4 relative z-10 data-[state=active]:bg-orange-500 data-[state=active]:shadow-lg data-[state=active]:text-white dark:data-[state=active]:bg-orange-500 dark:data-[state=active]:text-white transition-all duration-300 ease-in-out hover:bg-orange-100 dark:hover:bg-orange-900/30 text-base font-medium flex-1 border-2 border-orange-500/30 hover:border-orange-500/60 data-[state=active]:border-orange-500"
@@ -2123,7 +2178,12 @@ const EstoqueModule = () => {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              onClick={() => { setEditingProduto(null); setFormData({ nome: '', codigo: '', preco: '', quantidade: '', categoriaId: cat.id.toString(), imagem: null, oculto: false }); setIsDialogOpen(true); }}
+                              onClick={() => { 
+                                if (!canCreate('estoque')) return;
+                                setEditingProduto(null); 
+                                setFormData({ nome: '', codigo: '', preco: '', quantidade: '', categoriaId: cat.id.toString(), imagem: null, oculto: false }); 
+                                setIsDialogOpen(true); 
+                              }}
                               className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500 shadow-lg hover:shadow-xl transition-all duration-200"
                             >
                               <Plus className="h-4 w-4 mr-2" />
@@ -2252,7 +2312,12 @@ const EstoqueModule = () => {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              onClick={() => { setEditingProduto(null); setFormData({ nome: '', codigo: '', preco: '', quantidade: '', categoriaId: cat.id.toString(), imagem: null, oculto: false }); setIsDialogOpen(true); }}
+                              onClick={() => { 
+                                if (!canCreate('estoque')) return;
+                                setEditingProduto(null); 
+                                setFormData({ nome: '', codigo: '', preco: '', quantidade: '', categoriaId: cat.id.toString(), imagem: null, oculto: false }); 
+                                setIsDialogOpen(true); 
+                              }}
                               className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500 shadow-lg hover:shadow-xl transition-all duration-200"
                             >
                               <Plus className="h-4 w-4 mr-2" />
@@ -2367,14 +2432,20 @@ const EstoqueModule = () => {
                   {!searchTerm && (
                     <div className="flex gap-3 justify-center">
                       <Button
-                        onClick={() => setIsDialogOpen(true)}
+                        onClick={() => {
+                          if (!canCreate('estoque')) return;
+                          setIsDialogOpen(true);
+                        }}
                         className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         <Plus className="h-5 w-5 mr-2" />
                         Cadastrar Produto
                       </Button>
                       <Button
-                        onClick={() => setIsCatDialogOpen(true)}
+                        onClick={() => {
+                          if (!canCreate('estoque')) return;
+                          setIsCatDialogOpen(true);
+                        }}
                         variant="outline"
                         className="border-violet-500 text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 font-semibold px-6 py-3"
                       >
@@ -2387,6 +2458,82 @@ const EstoqueModule = () => {
               )}
               </motion.div>
             </TabsContent>
+
+            {/* OPÇÕES */}
+            {gruposEOpcoesAtivo && (
+              <TabsContent value="opcoes" className="space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                        <Settings className="h-7 w-7 text-purple-600 dark:text-purple-400" />
+                        Grupos e Opções
+                      </h2>
+                      <p className="text-slate-600 dark:text-slate-400 mt-2">
+                        Gerencie grupos de opções e vincule-os a produtos ou categorias
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                        <Settings className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                          Sistema de Opções
+                        </h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Crie grupos de opções e vincule-os aos seus produtos
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-slate-900 dark:text-white">Grupos de Opções</h4>
+                        <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                          <p>• <strong>Adicionais:</strong> Queijo extra, bacon, azeitona</p>
+                          <p>• <strong>Tamanhos:</strong> Pequeno, médio, grande</p>
+                          <p>• <strong>Cores:</strong> Vermelho, azul, verde</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <h4 className="font-medium text-slate-900 dark:text-white">Vinculação</h4>
+                        <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                          <p>• Vincule grupos a produtos específicos</p>
+                          <p>• Ou vincule a categorias inteiras</p>
+                          <p>• Clientes escolhem quantidades no módulo de vendas</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                          <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <h5 className="font-medium text-blue-900 dark:text-blue-100">
+                            Em desenvolvimento
+                          </h5>
+                          <p className="text-sm text-blue-700 dark:text-blue-200 mt-1">
+                            Esta funcionalidade está sendo implementada. Em breve você poderá criar e gerenciar grupos de opções para seus produtos.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </TabsContent>
+            )}
 
             {/* MOVIMENTAÇÕES */}
             <TabsContent value="movimentacoes" className="space-y-6">
@@ -2480,7 +2627,11 @@ const EstoqueModule = () => {
                   </p>
                   <div className="flex gap-3 justify-center">
                     <Button
-                      onClick={() => setIsMovDialogOpen(true)}
+                      onClick={() => {
+                        if (!canCreate('estoque')) return;
+                        if (!canCreate('estoque')) return;
+    setIsMovDialogOpen(true);
+                      }}
                       className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       <Plus className="h-5 w-5 mr-2" />
@@ -2643,20 +2794,18 @@ const EstoqueModule = () => {
           
           <div className="relative bg-slate-50 dark:bg-slate-800 min-h-[60vh] flex items-center justify-center p-8">
             {selectedImage && (
-
-              <div className="relative group">
+              <div className="relative group w-full h-full flex flex-col items-center justify-center">
                 {/* Imagem principal com efeitos */}
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="relative overflow-hidden rounded-2xl shadow-2xl"
+                  className="relative overflow-hidden rounded-2xl shadow-2xl bg-white p-4"
                 >
-              <img
-                src={selectedImage}
-                alt={selectedImageTitle}
-
-                    className="max-w-full max-h-[60vh] object-contain rounded-2xl transition-transform duration-300 group-hover:scale-105"
+                  <img
+                    src={selectedImage}
+                    alt={selectedImageTitle}
+                    className="max-w-full max-h-[50vh] object-contain rounded-xl transition-transform duration-300 group-hover:scale-105"
                   />
                   
                   {/* Overlay com informações */}
@@ -2678,20 +2827,6 @@ const EstoqueModule = () => {
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>
-                  </div>
-                </motion.div>
-                
-                {/* Informações do produto */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.1 }}
-                  className="mt-6 text-center"
-                >
-                  <div className="bg-white dark:bg-slate-700 rounded-xl p-4 shadow-lg">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                      {selectedImageTitle}
-                    </h3>
                   </div>
                 </motion.div>
               </div>

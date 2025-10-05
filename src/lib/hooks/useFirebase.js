@@ -148,6 +148,8 @@ export const useProdutos = () => useFirebaseData('produtos');
 export const useCategorias = () => useFirebaseData('categorias');
 export const useMovimentacoes = () => useFirebaseData('movimentacoes');
 export const useFinanceiro = () => useFirebaseData('financeiro');
+export const useGruposOpcoes = () => useFirebaseData('gruposOpcoes');
+export const useOpcoes = () => useFirebaseData('opcoes');
 export const useConfiguracoesLoja = () => {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -159,11 +161,11 @@ export const useConfiguracoesLoja = () => {
         setLoading(true);
         console.log('[useConfiguracoesLoja] Carregando configurações da loja...');
         
-        const result = await firebaseService.getData('configuracoes_loja');
+        const result = await firebaseService.getConfiguracaoLoja();
         console.log('[useConfiguracoesLoja] Configurações carregadas:', result);
         
         // Se não existir configuração, usar padrão
-        if (!result || result.length === 0) {
+        if (!result) {
           const defaultConfig = {
             nomeEmpresa: 'MultiSmart',
             descricao: 'Manutenção e Comércio de Celulares e Tablets',
@@ -173,11 +175,12 @@ export const useConfiguracoesLoja = () => {
             cnpj: '47.309.271/0001-97',
             email: '',
             site: '',
-            logo: ''
+            logo: '',
+            imei: ''
           };
           setConfig(defaultConfig);
         } else {
-          setConfig(result[0]); // Primeira (e única) configuração
+          setConfig(result);
         }
         
         setLoading(false);
@@ -196,7 +199,8 @@ export const useConfiguracoesLoja = () => {
           cnpj: '47.309.271/0001-97',
           email: '',
           site: '',
-          logo: ''
+          logo: '',
+          imei: ''
         });
       }
     };
@@ -208,18 +212,305 @@ export const useConfiguracoesLoja = () => {
     try {
       console.log('[useConfiguracoesLoja] Salvando configurações:', configData);
       
-      // Se já existe configuração, atualizar; senão criar nova
-      if (config && config.id) {
-        const result = await firebaseService.saveData('configuracoes_loja', configData, config.id);
-        setConfig({ ...configData, id: config.id });
-        return result;
-      } else {
-        const result = await firebaseService.saveData('configuracoes_loja', configData);
-        setConfig({ ...configData, id: result.id });
-        return result;
-      }
+      const result = await firebaseService.saveConfiguracaoLoja(configData, config?.id);
+      setConfig({ ...configData, id: config?.id || result });
+      return result;
     } catch (err) {
       console.error('[useConfiguracoesLoja] Erro ao salvar configurações:', err);
+      setError(err);
+      throw err;
+    }
+  };
+
+  return {
+    config,
+    loading,
+    error,
+    saveConfig
+  };
+};
+
+// Hook para configurações de usuários
+export const useConfiguracoesUsuarios = () => {
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        setLoading(true);
+        console.log('[useConfiguracoesUsuarios] Carregando configurações de usuários...');
+        
+        const result = await firebaseService.getConfiguracaoUsuarios();
+        console.log('[useConfiguracoesUsuarios] Configurações carregadas:', result);
+        
+        if (!result) {
+          const defaultConfig = {
+            permitirCadastro: true,
+            requerAprovacao: false,
+            limiteUsuarios: 10,
+            notificacaoNovosUsuarios: true,
+            permissoes: {
+              clientes: { visualizar: true, criar: true, editar: true, excluir: false },
+              os: { visualizar: true, criar: true, editar: true, excluir: false },
+              ov: { visualizar: true, criar: true, editar: true, excluir: false },
+              estoque: { visualizar: true, criar: true, editar: true, excluir: false },
+              caixa: { visualizar: true, criar: true, editar: true, excluir: false },
+              financeiro: { visualizar: true, criar: true, editar: true, excluir: false },
+              relatorios: { visualizar: false, criar: false, editar: false, excluir: false },
+              configuracoes: { visualizar: false, criar: false, editar: false, excluir: false }
+            }
+          };
+          setConfig(defaultConfig);
+        } else {
+          setConfig(result);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('[useConfiguracoesUsuarios] Erro ao carregar configurações:', err);
+        setError(err);
+        setLoading(false);
+        
+        setConfig({
+          permitirCadastro: true,
+          requerAprovacao: false,
+          limiteUsuarios: 10,
+          notificacaoNovosUsuarios: true,
+          permissoes: {
+            clientes: { visualizar: true, criar: true, editar: true, excluir: false },
+            os: { visualizar: true, criar: true, editar: true, excluir: false },
+            ov: { visualizar: true, criar: true, editar: true, excluir: false },
+            estoque: { visualizar: true, criar: true, editar: true, excluir: false },
+            caixa: { visualizar: true, criar: true, editar: true, excluir: false },
+            financeiro: { visualizar: true, criar: true, editar: true, excluir: false },
+            relatorios: { visualizar: true, criar: false, editar: false, excluir: false },
+            configuracoes: { visualizar: false, criar: false, editar: false, excluir: false }
+          }
+        });
+      }
+    };
+
+    loadConfig();
+  }, []);
+
+  const saveConfig = async (configData) => {
+    try {
+      console.log('[useConfiguracoesUsuarios] Salvando configurações:', configData);
+      
+      const result = await firebaseService.saveConfiguracaoUsuarios(configData, config?.id);
+      setConfig({ ...configData, id: config?.id || result });
+      return result;
+    } catch (err) {
+      console.error('[useConfiguracoesUsuarios] Erro ao salvar configurações:', err);
+      setError(err);
+      throw err;
+    }
+  };
+
+  return {
+    config,
+    loading,
+    error,
+    saveConfig
+  };
+};
+
+// Hook para configurações de segurança
+export const useConfiguracoesSeguranca = () => {
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        setLoading(true);
+        console.log('[useConfiguracoesSeguranca] Carregando configurações de segurança...');
+        
+        const result = await firebaseService.getConfiguracaoSeguranca();
+        console.log('[useConfiguracoesSeguranca] Configurações carregadas:', result);
+        
+        if (!result) {
+          const defaultConfig = {
+            autenticacaoDoisFatores: false,
+            tempoSessao: 30,
+            tentativasLogin: 3,
+            bloqueioAutomatico: true,
+            auditoriaAtivada: true
+          };
+          setConfig(defaultConfig);
+        } else {
+          setConfig(result);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('[useConfiguracoesSeguranca] Erro ao carregar configurações:', err);
+        setError(err);
+        setLoading(false);
+        
+        setConfig({
+          autenticacaoDoisFatores: false,
+          tempoSessao: 30,
+          tentativasLogin: 3,
+          bloqueioAutomatico: true,
+          auditoriaAtivada: true
+        });
+      }
+    };
+
+    loadConfig();
+  }, []);
+
+  const saveConfig = async (configData) => {
+    try {
+      console.log('[useConfiguracoesSeguranca] Salvando configurações:', configData);
+      
+      const result = await firebaseService.saveConfiguracaoSeguranca(configData, config?.id);
+      setConfig({ ...configData, id: config?.id || result });
+      return result;
+    } catch (err) {
+      console.error('[useConfiguracoesSeguranca] Erro ao salvar configurações:', err);
+      setError(err);
+      throw err;
+    }
+  };
+
+  return {
+    config,
+    loading,
+    error,
+    saveConfig
+  };
+};
+
+// Hook para configurações de impressão
+export const useConfiguracoesImpressao = () => {
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        setLoading(true);
+        console.log('[useConfiguracoesImpressao] Carregando configurações de impressão...');
+        
+        const result = await firebaseService.getConfiguracaoImpressao();
+        console.log('[useConfiguracoesImpressao] Configurações carregadas:', result);
+        
+        if (!result) {
+          const defaultConfig = {
+            formatoPadrao: 'A4',
+            orientacaoPadrao: 'retrato',
+            margemPadrao: 1,
+            fontePadrao: 'Arial',
+            tamanhoFonte: 12
+          };
+          setConfig(defaultConfig);
+        } else {
+          setConfig(result);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('[useConfiguracoesImpressao] Erro ao carregar configurações:', err);
+        setError(err);
+        setLoading(false);
+        
+        setConfig({
+          formatoPadrao: 'A4',
+          orientacaoPadrao: 'retrato',
+          margemPadrao: 1,
+          fontePadrao: 'Arial',
+          tamanhoFonte: 12
+        });
+      }
+    };
+
+    loadConfig();
+  }, []);
+
+  const saveConfig = async (configData) => {
+    try {
+      console.log('[useConfiguracoesImpressao] Salvando configurações:', configData);
+      
+      const result = await firebaseService.saveConfiguracaoImpressao(configData, config?.id);
+      setConfig({ ...configData, id: config?.id || result });
+      return result;
+    } catch (err) {
+      console.error('[useConfiguracoesImpressao] Erro ao salvar configurações:', err);
+      setError(err);
+      throw err;
+    }
+  };
+
+  return {
+    config,
+    loading,
+    error,
+    saveConfig
+  };
+};
+
+// Hook para configurações do sistema
+export const useConfiguracoesSistema = () => {
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        setLoading(true);
+        console.log('[useConfiguracoesSistema] Carregando configurações do sistema...');
+        
+        const result = await firebaseService.getConfiguracaoSistema();
+        console.log('[useConfiguracoesSistema] Configurações carregadas:', result);
+        
+        if (!result) {
+          const defaultConfig = {
+            backupAutomatico: true,
+            frequenciaBackup: 'diario',
+            retencaoBackup: 30,
+            logsAtivados: true,
+            monitoramentoAtivo: true
+          };
+          setConfig(defaultConfig);
+        } else {
+          setConfig(result);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error('[useConfiguracoesSistema] Erro ao carregar configurações:', err);
+        setError(err);
+        setLoading(false);
+        
+        setConfig({
+          backupAutomatico: true,
+          frequenciaBackup: 'diario',
+          retencaoBackup: 30,
+          logsAtivados: true,
+          monitoramentoAtivo: true
+        });
+      }
+    };
+
+    loadConfig();
+  }, []);
+
+  const saveConfig = async (configData) => {
+    try {
+      console.log('[useConfiguracoesSistema] Salvando configurações:', configData);
+      
+      const result = await firebaseService.saveConfiguracaoSistema(configData, config?.id);
+      setConfig({ ...configData, id: config?.id || result });
+      return result;
+    } catch (err) {
+      console.error('[useConfiguracoesSistema] Erro ao salvar configurações:', err);
       setError(err);
       throw err;
     }
@@ -237,6 +528,9 @@ export const useConfiguracoesLoja = () => {
 export const useCaixa = () => {
   return useFirebaseData('caixa', { enableRealtime: true });
 };
+
+// Exportar hook de permissões
+export { usePermissions } from './usePermissions';
 
 // Hook específico e robusto para gerenciar usuários
 export const useUsuarios = () => {

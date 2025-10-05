@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { motion } from 'framer-motion';
-import { useUsuarios, useConfiguracao } from '@/lib/hooks/useFirebase';
+import { useUsuarios, useConfiguracoesUsuarios } from '@/lib/hooks/useFirebase';
 import { User, Lock, Mail, Camera, Shield, ArrowRight, LogIn, Clock, X } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
@@ -22,7 +22,7 @@ const Login = ({ onLogin }) => {
   } = useUsuarios();
   
   
-  const { config: configuracoes, loading: configLoading } = useConfiguracao();
+  const { config: configuracoes, loading: configLoading } = useConfiguracoesUsuarios();
 
   // Estados
   const [form, setForm] = useState({ email: '', senha: '' });
@@ -221,6 +221,17 @@ const Login = ({ onLogin }) => {
     setRegisterLoading(true);
     
     try {
+      // Verificar se cadastro está permitido
+      const permitirCadastro = configuracoes?.permitirCadastro ?? true; // Padrão: sempre permitido
+      if (!permitirCadastro) {
+        toast({
+          title: 'Cadastro desabilitado',
+          description: 'O cadastro de novos usuários está temporariamente desabilitado pelo administrador.',
+          variant: 'destructive'
+        });
+        setRegisterLoading(false);
+        return;
+      }
       // Verificar limite de usuários (sempre permitir até 10)
       const usuariosAtivos = countUsuariosAtivos();
       const limiteUsuarios = 10; // Limite fixo para teste

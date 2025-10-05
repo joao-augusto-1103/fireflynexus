@@ -8,25 +8,24 @@ import { useToast } from '@/components/ui/use-toast';
 import { t } from '@/lib/translations';
 import { AppContext } from '@/App';
 import { UserPlus, Mail, Lock, User, Phone, MapPin, Upload, X, Image as ImageIcon } from 'lucide-react';
-import { useUsuarios, useConfiguracao } from '@/lib/hooks/useFirebase';
+import { useUsuarios, useConfiguracoesUsuarios } from '@/lib/hooks/useFirebase';
 
 const CadastroUsuarioForm = () => {
   const { currentLanguage: appLanguage } = useContext(AppContext);
   const { toast } = useToast();
   const { usuarios, saveUsuario } = useUsuarios();
-  const { config: configuracoes } = useConfiguracao();
+  const { config: configuracoes } = useConfiguracoesUsuarios();
   
-  const [formData, setFormData] = useState({
-    nome: '',
-    email: '',
-    senha: '',
-    confirmarSenha: '',
-    telefone: '',
-    endereco: '',
-    tipoUsuario: 'comum',
-    ativo: true,
-    foto: ''
-  });
+   const [formData, setFormData] = useState({
+     nome: '',
+     email: '',
+     senha: '',
+     confirmarSenha: '',
+     telefone: '',
+     tipoUsuario: 'comum',
+     ativo: true,
+     foto: ''
+   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -209,6 +208,17 @@ const CadastroUsuarioForm = () => {
       return;
     }
 
+    // Verificar se cadastro está permitido
+    const permitirCadastro = configuracoes?.permitirCadastro ?? true; // Padrão: sempre permitido
+    if (!permitirCadastro) {
+      toast({
+        title: 'Cadastro desabilitado',
+        description: 'O cadastro de novos usuários está temporariamente desabilitado pelo administrador.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -236,18 +246,17 @@ const CadastroUsuarioForm = () => {
         return;
       }
       
-      const novoUsuario = {
-        nome: formData.nome,
-        email: formData.email,
-        senha: formData.senha,
-        telefone: formData.telefone,
-        endereco: formData.endereco,
-        tipo: formData.tipoUsuario,
-        foto: formData.foto,
-        status: 'ativo',
-        dataCriacao: new Date().toISOString(),
-        ultimoAcesso: null
-      };
+       const novoUsuario = {
+         nome: formData.nome,
+         email: formData.email,
+         senha: formData.senha,
+         telefone: formData.telefone,
+         tipo: formData.tipoUsuario,
+         foto: formData.foto,
+         status: 'ativo',
+         dataCriacao: new Date().toISOString(),
+         ultimoAcesso: null
+       };
       
       console.log('[CadastroUsuario] Dados do formulário:', formData);
       console.log('[CadastroUsuario] Novo usuário:', novoUsuario);
@@ -262,18 +271,17 @@ const CadastroUsuarioForm = () => {
         variant: 'default'
       });
 
-      // Limpar formulário
-      setFormData({
-        nome: '',
-        email: '',
-        senha: '',
-        confirmarSenha: '',
-        telefone: '',
-        endereco: '',
-        tipoUsuario: 'comum',
-        ativo: true,
-        foto: ''
-      });
+       // Limpar formulário
+       setFormData({
+         nome: '',
+         email: '',
+         senha: '',
+         confirmarSenha: '',
+         telefone: '',
+         tipoUsuario: 'comum',
+         ativo: true,
+         foto: ''
+       });
       setFotoPreview('');
 
     } catch (error) {
@@ -322,27 +330,29 @@ const CadastroUsuarioForm = () => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="telefone">Telefone</Label>
-            <Input
-              id="telefone"
-              type="tel"
-              value={formData.telefone}
-              onChange={(e) => handleInputChange('telefone', e.target.value)}
-              placeholder="(11) 99999-9999"
-            />
-          </div>
+           <div className="space-y-2">
+             <Label htmlFor="telefone">Telefone</Label>
+             <Input
+               id="telefone"
+               type="tel"
+               value={formData.telefone}
+               onChange={(e) => handleInputChange('telefone', e.target.value)}
+               placeholder="(11) 99999-9999"
+             />
+           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="endereco">Endereço</Label>
-            <Input
-              id="endereco"
-              type="text"
-              value={formData.endereco}
-              onChange={(e) => handleInputChange('endereco', e.target.value)}
-              placeholder="Rua, número, bairro, cidade"
-            />
-          </div>
+           <div className="space-y-2">
+             <Label htmlFor="tipoUsuario">Tipo de Usuário</Label>
+             <Select value={formData.tipoUsuario} onValueChange={(value) => handleInputChange('tipoUsuario', value)}>
+               <SelectTrigger>
+                 <SelectValue />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="comum">Usuário Comum</SelectItem>
+                 <SelectItem value="administrador">Administrador</SelectItem>
+               </SelectContent>
+             </Select>
+           </div>
         </div>
       </div>
 
@@ -452,31 +462,17 @@ const CadastroUsuarioForm = () => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirmarSenha">Confirmar Senha *</Label>
-            <Input
-              id="confirmarSenha"
-              type="password"
-              value={formData.confirmarSenha}
-              onChange={(e) => handleInputChange('confirmarSenha', e.target.value)}
-              placeholder="Digite a senha novamente"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tipoUsuario">Tipo de Usuário</Label>
-            <Select value={formData.tipoUsuario} onValueChange={(value) => handleInputChange('tipoUsuario', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="comum">Usuário Comum</SelectItem>
-                <SelectItem value="financeiro">Usuário Financeiro</SelectItem>
-                <SelectItem value="administrador">Administrador</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+           <div className="space-y-2">
+             <Label htmlFor="confirmarSenha">Confirmar Senha *</Label>
+             <Input
+               id="confirmarSenha"
+               type="password"
+               value={formData.confirmarSenha}
+               onChange={(e) => handleInputChange('confirmarSenha', e.target.value)}
+               placeholder="Digite a senha novamente"
+               required
+             />
+           </div>
         </div>
       </div>
 
@@ -485,20 +481,19 @@ const CadastroUsuarioForm = () => {
         <Button
           type="button"
           variant="outline"
-          onClick={() => {
-            setFormData({
-              nome: '',
-              email: '',
-              senha: '',
-              confirmarSenha: '',
-              telefone: '',
-              endereco: '',
-              tipoUsuario: 'comum',
-              ativo: true,
-              foto: ''
-            });
-            setFotoPreview('');
-          }}
+           onClick={() => {
+             setFormData({
+               nome: '',
+               email: '',
+               senha: '',
+               confirmarSenha: '',
+               telefone: '',
+               tipoUsuario: 'comum',
+               ativo: true,
+               foto: ''
+             });
+             setFotoPreview('');
+           }}
           disabled={isSubmitting}
         >
           Limpar

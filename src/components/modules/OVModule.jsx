@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { AppContext } from '@/App';
-import { useClientes, useProdutos, useCategorias, useOV, useMovimentacoes, useCaixa, useFinanceiro } from '@/lib/hooks/useFirebase';
+import { useClientes, useProdutos, useCategorias, useOV, useMovimentacoes, useCaixa, useFinanceiro, usePermissions } from '@/lib/hooks/useFirebase';
 import { firebaseService } from '@/lib/firebaseService';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
 import CustomerAvatar from '@/components/ui/customer-avatar';
@@ -26,7 +26,8 @@ const OVModule = ({ userId }) => {
   const { data: categorias } = useCategorias();
   const { save: saveMovimentacao } = useMovimentacoes();
   const { data: caixaData, save: saveCaixa } = useCaixa();
-  const { save: saveFinanceiro } = useFinanceiro();
+  const { data: financeiro, save: saveFinanceiro } = useFinanceiro();
+  const { canCreate, canEdit, canDelete } = usePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('todas');
   const [searchTermOVs, setSearchTermOVs] = useState('');
@@ -50,6 +51,80 @@ const OVModule = ({ userId }) => {
   // Estados para confirmação de exclusão
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [ovToDelete, setOvToDelete] = useState(null);
+  
+  // Estados para modal de estoque insuficiente
+  const [estoqueModalOpen, setEstoqueModalOpen] = useState(false);
+  const [estoqueModalData, setEstoqueModalData] = useState({ 
+    produto: '', 
+    disponivel: 0, 
+    solicitado: 0, 
+    contexto: 'carrinho', // 'carrinho' ou 'manual'
+    produtoId: null
+  });
+
+  // Função para abrir modal de estoque insuficiente
+  const abrirModalEstoque = (produto, disponivel, solicitado, contexto = 'carrinho', produtoId = null) => {
+    setEstoqueModalData({ produto, disponivel, solicitado, contexto, produtoId });
+    setEstoqueModalOpen(true);
+  };
+
+  // Função para atualizar entrada financeira existente (OV)
+  const updateExistingFinanceiroEntryOV = async (existingEntry, ov) => {
+    try {
+      // Determinar forma de pagamento (múltiplas formas ou única)
+      const formasPagamentoDetalhadas = ov.formasPagamento && ov.formasPagamento.length > 0 
+        ? ov.formasPagamento 
+        : [{ tipo: ov.formaPagamento || 'dinheiro', valor: parseFloat(ov.total) }];
+      
+      // Forma de pagamento principal para compatibilidade
+      const formaPagamentoPrincipal = formasPagamentoDetalhadas[0].tipo;
+
+      // Determinar cliente
+      const clienteNome = ov.cliente || ov.clienteNome || 'Cliente não informado';
+      const clienteTelefone = ov.telefone || ov.clienteTelefone || '';
+      const clienteId = ov.clienteId || '';
+
+      // Criar entrada financeira atualizada (com ou sem parcelamento)
+      const valorParcela = ov.parcelamento && ov.parcelamento.ativo && ov.parcelamento.parcelas > 1 
+        ? parseFloat(ov.total) / ov.parcelamento.parcelas 
+        : parseFloat(ov.total);
+
+      const updatedEntry = {
+        ...existingEntry,
+        descricao: `Recebimento da OV: ${ov.numero}`,
+        valor: parseFloat(ov.total),
+        status: ov.parcelamento && ov.parcelamento.ativo && ov.parcelamento.parcelas > 1 ? 'Pendente' : 'Concluído',
+        formaPagamento: formaPagamentoPrincipal,
+        cliente: clienteNome,
+        telefone: clienteTelefone,
+        clienteId: clienteId,
+        observacoes: `Ordem de Venda ${ov.numero} - ${clienteNome}${formasPagamentoDetalhadas.length > 1 ? ` - Pagamento: ${formasPagamentoDetalhadas.map(fp => `${fp.tipo} (R$ ${fp.valor.toFixed(2)})`).join(', ')}` : ''}`,
+        parcelamento: ov.parcelamento && ov.parcelamento.ativo && ov.parcelamento.parcelas > 1 ? {
+          ativo: true,
+          parcelas: ov.parcelamento.parcelas,
+          intervalo: ov.parcelamento.intervalo,
+          valorParcela: valorParcela,
+          parcelasGeradas: existingEntry.parcelamento?.parcelasGeradas || [],
+          parcelasPagas: existingEntry.parcelamento?.parcelasPagas || 0
+        } : {
+          ativo: false,
+          parcelas: 1,
+          intervalo: 'mensal',
+          valorParcela: parseFloat(ov.total),
+          parcelasGeradas: [],
+          parcelasPagas: 0
+        },
+        formasPagamento: formasPagamentoDetalhadas,
+        updatedAt: new Date().toISOString()
+      };
+      
+      await saveFinanceiro(updatedEntry, existingEntry.id);
+      
+    } catch (error) {
+      console.error('[OV] ❌ Erro ao atualizar entrada financeira existente:', error);
+      throw error;
+    }
+  };
   
   // Estados para autocomplete no modal de nova OV
   const [buscaProdutoModal, setBuscaProdutoModal] = useState({});
@@ -88,21 +163,14 @@ const OVModule = ({ userId }) => {
 
   // Logs para debug
   useEffect(() => {
-    console.log('[OV] Clientes carregados:', clientes);
-    console.log('[OV] Produtos carregados:', produtos);
-    console.log('[OV] Categorias carregadas:', categorias);
-    console.log('[OV] Ordens carregadas:', ordens);
   }, [clientes, produtos, categorias, ordens]);
 
   // Função para salvar OV no Firebase
   const salvarOV = async (ovData) => {
     try {
-      console.log('[OV] Salvando OV com dados:', ovData);
-      console.log('[OV] UserId atual:', userId);
       
       
       const result = await saveOV(ovData);
-      console.log('[OV] OV salva com sucesso:', result);
       
       toast({
         title: "Sucesso!",
@@ -121,7 +189,14 @@ const OVModule = ({ userId }) => {
   // Função para abrir dialog de OV
   const handleOpenDialog = (ov = null) => {
     try {
-      console.log('[OV] Abrindo dialog para OV:', ov);
+      
+      // Verificar permissões
+      if (ov) {
+        if (!canEdit('ov')) return;
+      } else {
+        if (!canCreate('ov')) return;
+      }
+      
       setEditingOV(ov);
       
       if (ov) {
@@ -192,7 +267,6 @@ const OVModule = ({ userId }) => {
       parcelamento: { ativo: false, parcelas: 1, intervalo: 'mensal' }
     });
     closeDialog('ov');
-    console.log('[OV] Dialog de OV fechado');
   };
 
   const calculateTotal = (produtos) => {
@@ -212,8 +286,19 @@ const OVModule = ({ userId }) => {
           preco: produto.preco
         };
       }
+    } else if (field === 'quantidade') {
+      const quantidade = parseInt(value) || 0;
+      const produto = produtos.find(p => p.id === newProdutos[index].produtoId);
+      
+      // Validar estoque se o produto foi selecionado
+      if (produto && quantidade > produto.quantidade) {
+        abrirModalEstoque(produto.nome, produto.quantidade, quantidade, 'manual', produto.id);
+        return; // Não permite a alteração
+      }
+      
+      newProdutos[index][field] = quantidade;
     } else {
-      newProdutos[index][field] = field === 'quantidade' || field === 'preco' ? parseFloat(value) || 0 : value;
+      newProdutos[index][field] = field === 'preco' ? parseFloat(value) || 0 : value;
     }
     
     const total = calculateTotal(newProdutos);
@@ -235,11 +320,21 @@ const OVModule = ({ userId }) => {
 
   const updateFinanceiro = async (ov, action) => {
     try {
-      console.log('[OV] 🔄 Iniciando atualização do financeiro para OV:', ov.numero);
-      console.log('[OV] 🔄 Action:', action);
-      console.log('[OV] 🔄 Status da OV:', ov.status);
       
-      if (action === 'add') {
+      if (action === 'add' || action === 'update') {
+        // Verificar se já existe uma entrada financeira para esta OV
+        const existingEntry = financeiro.find(entry => entry.origemId === `ov-${ov.id}`);
+        
+        
+        if (existingEntry && action === 'add') {
+          return;
+        }
+        
+        if (existingEntry && action === 'update') {
+          // Atualizar entrada existente
+          await updateExistingFinanceiroEntryOV(existingEntry, ov);
+          return;
+        }
         // Determinar forma de pagamento (múltiplas formas ou única)
         const formasPagamentoDetalhadas = ov.formasPagamento && ov.formasPagamento.length > 0 
           ? ov.formasPagamento 
@@ -290,15 +385,10 @@ const OVModule = ({ userId }) => {
           createdAt: new Date().toISOString()
         };
         
-        console.log('[OV] 📝 Nova entrada financeira criada:', newEntry);
         await saveFinanceiro(newEntry);
-        console.log('[OV] ✅ Entrada financeira salva no Firebase');
         
       } else if (action === 'remove') {
-        console.log('[OV] 🗑️ Removendo entrada financeira para OV:', ov.numero);
         // Para remover, seria necessário implementar uma função específica no hook
-        // Por enquanto, apenas logamos a intenção
-        console.log('[OV] ⚠️ Remoção de entrada financeira não implementada ainda');
       }
       
     } catch (error) {
@@ -313,17 +403,14 @@ const OVModule = ({ userId }) => {
 
   const updateCaixa = async (ov) => {
     try {
-      console.log('[OV] 🔄 Iniciando atualização do caixa para OV:', ov.numero);
       
       // Verificar se há caixa aberto
       const caixaAberto = caixaData?.find(caixa => caixa.status === 'aberto');
       
       if (!caixaAberto) {
-        console.log('[OV] ⚠️ Nenhum caixa aberto encontrado, não será adicionada transação');
         return;
       }
       
-      console.log('[OV] ✅ Caixa aberto encontrado:', caixaAberto.id);
       
       // Criar transação de entrada no caixa
       const novaTransacao = {
@@ -337,7 +424,6 @@ const OVModule = ({ userId }) => {
         categoria: 'venda'
       };
 
-      console.log('[OV] 📝 Nova transação criada:', novaTransacao);
 
       // Atualizar caixa com nova transação
       const caixaAtualizado = {
@@ -345,9 +431,7 @@ const OVModule = ({ userId }) => {
         transacoes: [...(caixaAberto.transacoes || []), novaTransacao]
       };
 
-      console.log('[OV] 💾 Salvando caixa atualizado...');
       await saveCaixa(caixaAtualizado, caixaAberto.id);
-      console.log('[OV] ✅ Transação adicionada ao caixa com sucesso!');
       
     } catch (error) {
       console.error('[OV] ❌ Erro ao atualizar caixa:', error);
@@ -395,6 +479,7 @@ const OVModule = ({ userId }) => {
     };
 
     // Se não está editando e tem cliente, verificar se precisa cadastrar
+    
     if (!editingOV && formData.clienteNome.trim()) {
       // Buscar cliente existente
       clienteExistente = clientes.find(c => 
@@ -420,12 +505,13 @@ const OVModule = ({ userId }) => {
           };
           
           const clienteSalvo = await saveCliente(novoCliente);
+          
           newOV.clienteId = clienteSalvo.id || Date.now();
           newOV.clienteNome = formData.clienteNome.trim();
           newOV.clienteTelefone = formData.clienteTelefone.trim();
           clienteFoiCadastrado = true;
         } catch (error) {
-          console.error('Erro ao cadastrar cliente:', error);
+          console.error('[OV] ❌ Erro ao cadastrar cliente:', error);
           // Mesmo com erro, salvar na OV sem cliente
           newOV.clienteId = '';
         }
@@ -436,7 +522,6 @@ const OVModule = ({ userId }) => {
       
       if (editingOV) {
         // Atualizar OV existente
-        console.log('[OV] Atualizando OV existente:', editingOV.id);
         await saveOV(newOV, editingOV.id);
         toast({
           title: "Sucesso!",
@@ -444,7 +529,6 @@ const OVModule = ({ userId }) => {
         });
       } else {
         // Criar nova OV
-        console.log('[OV] Criando nova OV:', newOV);
         await saveOV(newOV);
         let description = "OV criada com sucesso!";
         
@@ -461,15 +545,19 @@ const OVModule = ({ userId }) => {
         });
       }
 
-      // Atualizar financeiro apenas se não estiver editando
-      if (!editingOV) {
-        if (newOV.status === 'Concluída') {
-          await updateFinanceiro(newOV, 'add');
-          // Adicionar ao caixa se estiver aberto
-          await updateCaixa(newOV);
+      // Atualizar financeiro baseado no status e se está editando
+      if (newOV.status === 'Concluída') {
+        if (editingOV) {
+          // Se está editando uma OV existente, atualizar o registro financeiro
+          await updateFinanceiro(newOV, 'update');
         } else {
-          await updateFinanceiro(newOV, 'remove');
+          // Se é uma nova OV, criar registro financeiro
+          await updateFinanceiro(newOV, 'add');
         }
+        // Adicionar ao caixa se estiver aberto
+        await updateCaixa(newOV);
+      } else {
+        await updateFinanceiro(newOV, 'remove');
       }
 
       handleCloseDialog();
@@ -484,6 +572,9 @@ const OVModule = ({ userId }) => {
   };
 
   const handleDeleteClick = (ov) => {
+    // Verificar permissão de exclusão
+    if (!canDelete('ov')) return;
+    
     setOvToDelete(ov);
     setConfirmDeleteOpen(true);
   };
@@ -496,7 +587,6 @@ const OVModule = ({ userId }) => {
       await updateFinanceiro(ovToDelete, 'remove');
       
       // Deletar do Firebase
-      console.log('[OV] Removendo OV:', ovToDelete.id);
       await removeOV(ovToDelete.id);
       
       toast({
@@ -504,7 +594,6 @@ const OVModule = ({ userId }) => {
         description: "OV removida com sucesso!"
       });
       
-      console.log(`✅ OV ${ovToDelete.numero} removida com sucesso`);
       setConfirmDeleteOpen(false);
       setOvToDelete(null);
       
@@ -566,6 +655,16 @@ const OVModule = ({ userId }) => {
   const selecionarProdutoCarrinho = (produto) => {
     // Verificar se o produto já está no carrinho
     const produtoExistente = carrinho.find(item => item.id === produto.id);
+    
+    // Calcular a quantidade que seria adicionada
+    const quantidadeAtual = produtoExistente ? produtoExistente.quantidade : 0;
+    const novaQuantidade = quantidadeAtual + 1;
+    
+    // Verificar se há estoque suficiente
+    if (novaQuantidade > produto.quantidade) {
+      abrirModalEstoque(produto.nome, produto.quantidade, novaQuantidade, 'carrinho', produto.id);
+      return;
+    }
     
     if (produtoExistente) {
       // Se já existe, aumentar a quantidade
@@ -732,6 +831,16 @@ const OVModule = ({ userId }) => {
       return;
     }
     
+    // Encontrar o produto no estoque para validar
+    const produtoEstoque = produtos.find(p => p.id === produtoId);
+    const itemCarrinho = carrinho.find(item => item.id === produtoId);
+    
+    // Verificar se há estoque suficiente
+    if (produtoEstoque && novaQuantidade > produtoEstoque.quantidade) {
+      abrirModalEstoque(itemCarrinho?.nome || produtoEstoque.nome, produtoEstoque.quantidade, novaQuantidade, 'carrinho', produtoId);
+      return; // Não permite a alteração
+    }
+    
     setCarrinho(carrinho.map(item => 
       item.id === produtoId 
         ? { ...item, quantidade: novaQuantidade }
@@ -878,14 +987,12 @@ const OVModule = ({ userId }) => {
           const novaQuantidade = produtoEstoque.quantidade - item.quantidade;
           
           // Atualizar produto no estoque
-          console.log('[OV] Atualizando estoque do produto:', produtoEstoque.id);
           await saveProduto({
             ...produtoEstoque,
             quantidade: novaQuantidade
           }, produtoEstoque.id);
           
           // Criar movimentação de saída
-          console.log('[OV] Criando movimentação de saída para:', item.nome);
           await saveMovimentacao({
             produtoId: item.id,
             produto: item.nome,
@@ -897,7 +1004,6 @@ const OVModule = ({ userId }) => {
             createdAt: new Date().toISOString()
           });
           
-          console.log(`✅ Baixa realizada: ${item.nome} - ${item.quantidade} unidades`);
         }
       }
       
@@ -945,7 +1051,6 @@ const OVModule = ({ userId }) => {
       let clienteResult = clienteSelecionado;
       
       if (!clienteSelecionado.id) {
-        console.log('[OV] 🔍 FINALIZAR PAGAMENTO - Criando cliente via pré-cadastro...');
         
         const customerData = {
           nome: clienteSelecionado.nome.trim(),
@@ -956,7 +1061,6 @@ const OVModule = ({ userId }) => {
 
         // Usar função centralizada que controla concorrência
         clienteResult = await firebaseService.createCustomerIfNotExists(customerData, 'ordem_venda');
-        console.log('[OV] ✅ Cliente processado via finalizarPagamento:', clienteResult);
       }
       
       
@@ -981,7 +1085,6 @@ const OVModule = ({ userId }) => {
         _source: 'finalizarPagamento_carrinho' // CONTROLE DE ORIGEM
       };
       
-      console.log('[OV] Dados da nova OV:', novaOV);
 
       // Salvar no Firebase
       await salvarOV(novaOV);
@@ -1032,6 +1135,11 @@ const OVModule = ({ userId }) => {
     
     return matchSearch && matchCategoria && naoOculto && categoriaNaoOculta;
   });
+
+  // Ordenar categorias pela ordem personalizada (mesma lógica do estoque)
+  const categoriasOrdenadas = [...categorias]
+    .filter(cat => !cat.oculto) // Excluir categorias ocultas
+    .sort((a, b) => (a.ordem ?? 999) - (b.ordem ?? 999)); // Ordenar por ordem
 
   // Filtrar OVs do dia atual
   const hoje = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -1347,7 +1455,7 @@ const OVModule = ({ userId }) => {
                     <div>
                       <Label htmlFor="status" className="text-sm font-medium text-slate-700 dark:text-slate-300">Status da OV</Label>
                       <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
-                        <SelectTrigger className="mt-1 bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600">
+                        <SelectTrigger id="status" className="mt-1 bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1600,13 +1708,13 @@ const OVModule = ({ userId }) => {
                                 value={formData.parcelamento?.intervalo || 'mensal'} 
                                 onValueChange={(value) => setFormData({
                                   ...formData,
-                                  parcelamento: {
-                                    ...formData.parcelamento,
-                                    intervalo: value
+                                  parcelamento: { 
+                                    ...formData.parcelamento, 
+                                    intervalo: value 
                                   }
                                 })}
                               >
-                                <SelectTrigger className="mt-1 h-8 text-sm">
+                                <SelectTrigger id="intervaloManual" className="mt-1 h-8 text-sm">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1811,7 +1919,7 @@ const OVModule = ({ userId }) => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todas">Todas as categorias</SelectItem>
-                    {categorias.map(cat => (
+                    {categoriasOrdenadas.map(cat => (
                       <SelectItem key={cat.id} value={cat.id}>
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: cat.cor }}></div>
@@ -1826,8 +1934,10 @@ const OVModule = ({ userId }) => {
 
           {/* PRODUTOS POR CATEGORIA */}
           <div className="space-y-8">
-            {categorias.map(categoria => {
-              const produtosDaCategoria = produtosFiltrados.filter(p => p.categoriaId === categoria.id);
+            {categoriasOrdenadas.map(categoria => {
+              const produtosDaCategoria = produtosFiltrados
+                .filter(p => p.categoriaId === categoria.id)
+                .sort((a, b) => (a.ordem ?? 999) - (b.ordem ?? 999)); // Ordenar produtos pela ordem personalizada
               if (produtosDaCategoria.length === 0) return null;
               
               return (
@@ -2385,7 +2495,7 @@ const OVModule = ({ userId }) => {
                     <div>
                       <Label htmlFor="intervalo" className="text-sm font-medium text-slate-700 dark:text-slate-300">Intervalo</Label>
                       <Select value={parcelamento.intervalo} onValueChange={(value) => setParcelamento({...parcelamento, intervalo: value})}>
-                        <SelectTrigger className="mt-2 h-11">
+                        <SelectTrigger id="intervalo" className="mt-2 h-11">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -2937,6 +3047,99 @@ const OVModule = ({ userId }) => {
         cancelText="Cancelar"
         type="delete"
       />
+
+      {/* Modal de Estoque Insuficiente - Unificado */}
+      <Dialog open={estoqueModalOpen} onOpenChange={setEstoqueModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-800 border-0 p-0 overflow-hidden">
+          <DialogHeader className={`bg-gradient-to-r ${estoqueModalData.contexto === 'carrinho' ? 'from-blue-500 to-purple-500' : 'from-orange-500 to-red-500'} text-white p-6`}>
+            <DialogTitle className="text-xl font-bold flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                {estoqueModalData.contexto === 'carrinho' ? (
+                  <ShoppingCart className="h-6 w-6" />
+                ) : (
+                  <Package className="h-6 w-6" />
+                )}
+              </div>
+              Estoque Insuficiente
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="p-6 space-y-4">
+            <div className="text-center">
+              <div className={`w-16 h-16 ${estoqueModalData.contexto === 'carrinho' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-orange-100 dark:bg-orange-900/30'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                {estoqueModalData.contexto === 'carrinho' ? (
+                  <ShoppingCart className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                ) : (
+                  <Package className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+                )}
+              </div>
+              
+              <div className="mb-3">
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                  estoqueModalData.contexto === 'carrinho' 
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200' 
+                    : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200'
+                }`}>
+                  {estoqueModalData.contexto === 'carrinho' ? '🛒 Carrinho de Vendas' : '📝 Ordem de Venda Manual'}
+                </span>
+              </div>
+              
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                Produto: {estoqueModalData.produto}
+              </h3>
+              
+              <div className="bg-slate-50 dark:bg-slate-700 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600 dark:text-slate-400">Disponível em estoque:</span>
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
+                    {estoqueModalData.disponivel} unidades
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600 dark:text-slate-400">Quantidade solicitada:</span>
+                  <span className="font-semibold text-red-600 dark:text-red-400">
+                    {estoqueModalData.solicitado} unidades
+                  </span>
+                </div>
+                
+                <div className="border-t border-slate-200 dark:border-slate-600 pt-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600 dark:text-slate-400">Diferença:</span>
+                    <span className="font-bold text-red-600 dark:text-red-400">
+                      -{(estoqueModalData.solicitado - estoqueModalData.disponivel)} unidades
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-4">
+                {estoqueModalData.contexto === 'carrinho' 
+                  ? 'Não é possível adicionar esta quantidade ao carrinho pois excederia o estoque disponível.'
+                  : 'Não é possível definir esta quantidade na ordem de venda pois excederia o estoque disponível.'
+                }
+              </p>
+              
+              {estoqueModalData.disponivel > 0 && (
+                <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    💡 <strong>Dica:</strong> Você pode adicionar até {estoqueModalData.disponivel} unidades deste produto.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="bg-slate-50 dark:bg-slate-700 p-4 flex justify-end">
+            <Button
+              onClick={() => setEstoqueModalOpen(false)}
+              className={`${estoqueModalData.contexto === 'carrinho' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700'} text-white px-6`}
+            >
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

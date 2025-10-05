@@ -312,7 +312,6 @@ const EditarUsuarioModal = ({ usuario, isOpen, onClose, onSave }) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="comum">Comum</SelectItem>
-                  <SelectItem value="financeiro">Financeiro</SelectItem>
                   <SelectItem value="administrador">Administrador</SelectItem>
                 </SelectContent>
               </Select>

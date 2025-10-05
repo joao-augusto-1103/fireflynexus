@@ -72,8 +72,6 @@ const UsuariosListagem = () => {
     switch (tipo) {
       case 'administrador':
         return <Shield className="h-4 w-4 text-red-600" />;
-      case 'financeiro':
-        return <DollarSign className="h-4 w-4 text-blue-600" />;
       default:
         return <UserIcon className="h-4 w-4 text-gray-600" />;
     }
@@ -238,7 +236,6 @@ const UsuariosListagem = () => {
           <SelectContent>
             <SelectItem value="todos">Todos</SelectItem>
             <SelectItem value="comum">Comum</SelectItem>
-            <SelectItem value="financeiro">Financeiro</SelectItem>
             <SelectItem value="administrador">Admin</SelectItem>
           </SelectContent>
         </Select>

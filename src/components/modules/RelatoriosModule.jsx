@@ -101,7 +101,8 @@ import {
   useProdutos, 
   useCategorias, 
   useFinanceiro,
-  useCaixa
+  useCaixa,
+  usePermissions
 } from '@/lib/hooks/useFirebase';
 
 // Importar componentes de gráficos
@@ -189,6 +190,12 @@ import {
 const RelatoriosModule = () => {
   const { t } = useContext(AppContext);
   const { toast } = useToast();
+  const { canView } = usePermissions();
+  
+  // Verificar permissão de visualização
+  if (!canView('relatorios')) {
+    return null;
+  }
   
   // Função para formatar moeda
   const formatCurrency = (value) => {

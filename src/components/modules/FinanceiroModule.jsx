@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { AppContext } from '@/App';
-import { useFinanceiro, useOS, useOV, useClientes } from '@/lib/hooks/useFirebase';
+import { useFinanceiro, useOS, useOV, useClientes, usePermissions } from '@/lib/hooks/useFirebase';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
 import CustomerAvatar from '@/components/ui/customer-avatar';
 
@@ -22,6 +22,7 @@ const FinanceiroModule = ({ userId }) => {
   const { data: ordens } = useOS(userId);
   const { data: vendas } = useOV(userId);
   const { data: clientes, save: saveCliente } = useClientes(userId);
+  const { canCreate, canEdit, canDelete } = usePermissions();
   
   // Estados principais
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,6 +77,14 @@ const FinanceiroModule = ({ userId }) => {
   const { toast } = useToast();
 
   const handleOpenDialog = (item = null) => {
+    // Verificar permissões
+    if (item) {
+      if (!canEdit('financeiro')) return;
+      setEditingItem(item);
+    } else {
+      if (!canCreate('financeiro')) return;
+    }
+    
     if (item) {
       setEditingItem(item);
       setFormData({
@@ -131,6 +140,14 @@ const FinanceiroModule = ({ userId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Verificar permissões
+    if (editingItem) {
+      if (!canEdit('financeiro')) return;
+    } else {
+      if (!canCreate('financeiro')) return;
+    }
+    
     console.log('[Financeiro] Submissão do formulário:', formData, editingItem);
     
     // Verificar campos obrigatórios
@@ -233,6 +250,7 @@ const FinanceiroModule = ({ userId }) => {
   };
 
   const handleDeleteClick = (item) => {
+    if (!canDelete('financeiro')) return;
     setItemToDelete(item);
     setConfirmDeleteOpen(true);
   };
@@ -861,7 +879,7 @@ const FinanceiroModule = ({ userId }) => {
                                 ...formData,
                                 parcelamento: { ...formData.parcelamento, intervalo: value }
                               })}>
-                                <SelectTrigger className="mt-2 h-11">
+                                <SelectTrigger id="intervalo" className="mt-2 h-11">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1004,7 +1022,7 @@ const FinanceiroModule = ({ userId }) => {
                       <div>
                         <Label htmlFor="formaPagamento" className="text-sm font-medium">Forma de Pagamento</Label>
                         <Select value={formData.formaPagamento} onValueChange={(value) => setFormData({...formData, formaPagamento: value})}>
-                          <SelectTrigger className="mt-2 h-11">
+                          <SelectTrigger id="formaPagamento" className="mt-2 h-11">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>

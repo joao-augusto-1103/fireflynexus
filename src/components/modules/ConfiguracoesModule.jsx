@@ -32,8 +32,14 @@ import {
   CreditCard,
   Package,
   Activity,
-    BarChart3,
-    Sun
+  BarChart3,
+  Sun,
+  Key,
+  Eye,
+  EyeOff,
+  Plus,
+  Edit,
+  Trash2
   } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,12 +50,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { t } from '@/lib/translations';
 import CadastroUsuarioForm from './CadastroUsuarioForm';
 import UsuariosListagem from './usuarios/UsuariosListagem';
 import { AppContext } from '@/App';
-import { useConfiguracao, useConfiguracoesLoja, useUsuarios } from '@/lib/hooks/useFirebase';
+import { 
+  useConfiguracao, 
+  useConfiguracoesLoja, 
+  useConfiguracoesUsuarios,
+  useConfiguracoesSeguranca,
+  useConfiguracoesImpressao,
+  useConfiguracoesSistema,
+  useUsuarios 
+} from '@/lib/hooks/useFirebase';
 
 const ConfiguracoesModule = ({ usuarioLogado }) => {
   const { currentLanguage: appLanguage } = useContext(AppContext);
@@ -58,6 +73,10 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
   // Hooks do Firebase
   const { config: configuracoesFirebase, loading: configLoading, saveConfig } = useConfiguracao();
   const { config: configLoja, saveConfig: saveConfigLoja } = useConfiguracoesLoja();
+  const { config: configUsuarios, saveConfig: saveConfigUsuarios } = useConfiguracoesUsuarios();
+  const { config: configSeguranca, saveConfig: saveConfigSeguranca } = useConfiguracoesSeguranca();
+  const { config: configImpressao, saveConfig: saveConfigImpressao } = useConfiguracoesImpressao();
+  const { config: configSistema, saveConfig: saveConfigSistema } = useConfiguracoesSistema();
   const { data: usuarios, loading: usuariosLoading, save: saveUsuario } = useUsuarios();
   
   // Estado para controlar aba interna de usuário
@@ -66,17 +85,12 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
   // Estado para controlar aba atual das configurações
   const [abaAtual, setAbaAtual] = useState('loja');
   
-  // Estado local das configurações do sistema
-  const [configuracoes, setConfiguracoes] = useState({
-    // Personalização
+  // Estado local das configurações de personalização
+  const [configuracoesPersonalizacao, setConfiguracoesPersonalizacao] = useState({
     tema: 'dark',
-    corPrimaria: '#3b82f6',
-    corSecundaria: '#8b5cf6',
-    nomeEmpresa: 'Sistema',
-    logoUrl: '',
-    logo: '',
     idioma: 'pt-BR',
-
+    // Funcionalidades do Estoque
+    gruposEOpcoesAtivo: false,
     // Ações Rápidas do Dashboard
     acoesRapidas: {
       novaOS: true,
@@ -88,34 +102,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
       adicionarProduto: true,
       movimentacao: true,
       relatorios: true
-    },
-
-    // Usuários
-    permitirCadastro: true,
-    requerAprovacao: false,
-    limiteUsuarios: 10,
-    notificacaoNovosUsuarios: true,
-
-    // Segurança
-    autenticacaoDoisFatores: false,
-    tempoSessao: 30,
-    tentativasLogin: 3,
-    bloqueioAutomatico: true,
-    auditoriaAtivada: true,
-
-    // Impressão
-    formatoPadrao: 'A4',
-    orientacaoPadrao: 'retrato',
-    margemPadrao: 1,
-    fontePadrao: 'Arial',
-    tamanhoFonte: 12,
-
-    // Sistema
-    backupAutomatico: true,
-    frequenciaBackup: 'diario',
-    retencaoBackup: 30,
-    logsAtivados: true,
-    monitoramentoAtivo: true
+    }
   });
 
   // Estado para configurações da loja
@@ -132,6 +119,143 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
     imei: ''
   });
 
+  // Estado para configurações de usuários
+  const [configUsuariosLocal, setConfigUsuariosLocal] = useState({
+    permitirCadastro: true,
+    requerAprovacao: false,
+    limiteUsuarios: 10,
+    notificacaoNovosUsuarios: true,
+    permissoes: {
+      clientes: {
+        visualizar: true,
+        criar: true,
+        editar: true,
+        excluir: false
+      },
+      os: {
+        visualizar: true,
+        criar: true,
+        editar: true,
+        excluir: false
+      },
+      ov: {
+        visualizar: true,
+        criar: true,
+        editar: true,
+        excluir: false
+      },
+      estoque: {
+        visualizar: true,
+        criar: true,
+        editar: true,
+        excluir: false
+      },
+      caixa: {
+        visualizar: true,
+        criar: true,
+        editar: true,
+        excluir: false
+      },
+      financeiro: {
+        visualizar: true,
+        criar: true,
+        editar: true,
+        excluir: false
+      },
+      relatorios: {
+        visualizar: false,
+        criar: false,
+        editar: false,
+        excluir: false
+      },
+      configuracoes: {
+        visualizar: false,
+        criar: false,
+        editar: false,
+        excluir: false
+      }
+    }
+  });
+
+  // Estado para permissões de usuários
+  const [permissoesUsuarios, setPermissoesUsuarios] = useState({
+    clientes: {
+      visualizar: true,
+      criar: true,
+      editar: true,
+      excluir: false
+    },
+    os: {
+      visualizar: true,
+      criar: true,
+      editar: true,
+      excluir: false
+    },
+    ov: {
+      visualizar: true,
+      criar: true,
+      editar: true,
+      excluir: false
+    },
+    estoque: {
+      visualizar: true,
+      criar: true,
+      editar: true,
+      excluir: false
+    },
+    caixa: {
+      visualizar: true,
+      criar: true,
+      editar: true,
+      excluir: false
+    },
+    financeiro: {
+      visualizar: true,
+      criar: true,
+      editar: true,
+      excluir: false
+    },
+    relatorios: {
+      visualizar: true,
+      criar: false,
+      editar: false,
+      excluir: false
+    },
+    configuracoes: {
+      visualizar: false,
+      criar: false,
+      editar: false,
+      excluir: false
+    }
+  });
+
+  // Estado para configurações de segurança
+  const [configSegurancaLocal, setConfigSegurancaLocal] = useState({
+    autenticacaoDoisFatores: false,
+    tempoSessao: 30,
+    tentativasLogin: 3,
+    bloqueioAutomatico: true,
+    auditoriaAtivada: true
+  });
+
+  // Estado para configurações de impressão
+  const [configImpressaoLocal, setConfigImpressaoLocal] = useState({
+    formatoPadrao: 'A4',
+    orientacaoPadrao: 'retrato',
+    margemPadrao: 1,
+    fontePadrao: 'Arial',
+    tamanhoFonte: 12
+  });
+
+  // Estado para configurações do sistema
+  const [configSistemaLocal, setConfigSistemaLocal] = useState({
+    backupAutomatico: true,
+    frequenciaBackup: 'diario',
+    retencaoBackup: 30,
+    logsAtivados: true,
+    monitoramentoAtivo: true
+  });
+
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingLoja, setIsSavingLoja] = useState(false);
   const [isSavingPersonalizacao, setIsSavingPersonalizacao] = useState(false);
@@ -140,12 +264,14 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
   const [isSavingImpressao, setIsSavingImpressao] = useState(false);
   const [isSavingSistema, setIsSavingSistema] = useState(false);
   const [previewLogo, setPreviewLogo] = useState('');
+  const [isPermissoesModalOpen, setIsPermissoesModalOpen] = useState(false);
+  const [moduloSelecionado, setModuloSelecionado] = useState('clientes');
 
 
   // Carregar configurações quando disponíveis
   useEffect(() => {
     if (configuracoesFirebase) {
-      setConfiguracoes(prev => ({ ...prev, ...configuracoesFirebase }));
+      setConfiguracoesPersonalizacao(prev => ({ ...prev, ...configuracoesFirebase }));
     }
   }, [configuracoesFirebase]);
 
@@ -167,18 +293,114 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
   }, [configLoja]);
 
   useEffect(() => {
+    if (configUsuarios) {
+      setConfigUsuariosLocal({
+        permitirCadastro: configUsuarios.permitirCadastro ?? true,
+        requerAprovacao: configUsuarios.requerAprovacao ?? false,
+        limiteUsuarios: configUsuarios.limiteUsuarios ?? 10,
+        notificacaoNovosUsuarios: configUsuarios.notificacaoNovosUsuarios ?? true,
+        permissoes: configUsuarios.permissoes || {
+          clientes: { visualizar: true, criar: true, editar: true, excluir: false },
+          os: { visualizar: true, criar: true, editar: true, excluir: false },
+          ov: { visualizar: true, criar: true, editar: true, excluir: false },
+          estoque: { visualizar: true, criar: true, editar: true, excluir: false },
+          caixa: { visualizar: true, criar: true, editar: true, excluir: false },
+          financeiro: { visualizar: true, criar: true, editar: true, excluir: false },
+          relatorios: { visualizar: true, criar: false, editar: false, excluir: false },
+          configuracoes: { visualizar: false, criar: false, editar: false, excluir: false }
+        }
+      });
+      
+      // Sincronizar com o estado de permissões do modal
+      if (configUsuarios.permissoes) {
+        setPermissoesUsuarios(configUsuarios.permissoes);
+      }
+    }
+  }, [configUsuarios]);
+
+  useEffect(() => {
+    if (configSeguranca) {
+      setConfigSegurancaLocal({
+        autenticacaoDoisFatores: configSeguranca.autenticacaoDoisFatores ?? false,
+        tempoSessao: configSeguranca.tempoSessao ?? 30,
+        tentativasLogin: configSeguranca.tentativasLogin ?? 3,
+        bloqueioAutomatico: configSeguranca.bloqueioAutomatico ?? true,
+        auditoriaAtivada: configSeguranca.auditoriaAtivada ?? true
+      });
+    }
+  }, [configSeguranca]);
+
+  useEffect(() => {
+    if (configImpressao) {
+      setConfigImpressaoLocal({
+        formatoPadrao: configImpressao.formatoPadrao || 'A4',
+        orientacaoPadrao: configImpressao.orientacaoPadrao || 'retrato',
+        margemPadrao: configImpressao.margemPadrao || 1,
+        fontePadrao: configImpressao.fontePadrao || 'Arial',
+        tamanhoFonte: configImpressao.tamanhoFonte || 12
+      });
+    }
+  }, [configImpressao]);
+
+  useEffect(() => {
+    if (configSistema) {
+      setConfigSistemaLocal({
+        backupAutomatico: configSistema.backupAutomatico ?? true,
+        frequenciaBackup: configSistema.frequenciaBackup || 'diario',
+        retencaoBackup: configSistema.retencaoBackup || 30,
+        logsAtivados: configSistema.logsAtivados ?? true,
+        monitoramentoAtivo: configSistema.monitoramentoAtivo ?? true
+      });
+    }
+  }, [configSistema]);
+
+  useEffect(() => {
     if (configuracoesFirebase) {
       setPreviewLogo(configuracoesFirebase.logo || '');
     }
   }, [configuracoesFirebase]);
 
 
-  const handleConfigChange = (key, value) => {
-    setConfiguracoes(prev => ({ ...prev, [key]: value }));
+  const handleConfigPersonalizacaoChange = (key, value) => {
+    setConfiguracoesPersonalizacao(prev => ({ ...prev, [key]: value }));
   };
 
   const handleConfigLojaChange = (key, value) => {
     setConfigLojaLocal(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleConfigUsuariosChange = (key, value) => {
+    setConfigUsuariosLocal(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleConfigSegurancaChange = (key, value) => {
+    setConfigSegurancaLocal(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleConfigImpressaoChange = (key, value) => {
+    setConfigImpressaoLocal(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleConfigSistemaChange = (key, value) => {
+    setConfigSistemaLocal(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handlePermissaoChange = (modulo, acao, value) => {
+    const novasPermissoes = {
+      ...permissoesUsuarios,
+      [modulo]: {
+        ...permissoesUsuarios[modulo],
+        [acao]: value
+      }
+    };
+    
+    setPermissoesUsuarios(novasPermissoes);
+    
+    // Atualizar também o estado local das configurações de usuários
+    setConfigUsuariosLocal(prev => ({
+      ...prev,
+      permissoes: novasPermissoes
+    }));
   };
 
 
@@ -217,7 +439,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
   const handleSavePersonalizacao = async () => {
     setIsSavingPersonalizacao(true);
     try {
-      await saveConfig(configuracoes);
+      await saveConfig(configuracoesPersonalizacao);
       toast({
         title: "Sucesso!",
         description: "Configurações de personalização salvas com sucesso!",
@@ -238,7 +460,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
   const handleSaveUsuarios = async () => {
     setIsSavingUsuarios(true);
     try {
-      await saveConfig(configuracoes);
+      await saveConfigUsuarios(configUsuariosLocal);
       toast({
         title: "Sucesso!",
         description: "Configurações de usuários salvas com sucesso!",
@@ -259,7 +481,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
   const handleSaveSeguranca = async () => {
     setIsSavingSeguranca(true);
     try {
-      await saveConfig(configuracoes);
+      await saveConfigSeguranca(configSegurancaLocal);
       toast({
         title: "Sucesso!",
         description: "Configurações de segurança salvas com sucesso!",
@@ -280,7 +502,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
   const handleSaveImpressao = async () => {
     setIsSavingImpressao(true);
     try {
-      await saveConfig(configuracoes);
+      await saveConfigImpressao(configImpressaoLocal);
       toast({
         title: "Sucesso!",
         description: "Configurações de impressão salvas com sucesso!",
@@ -301,7 +523,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
   const handleSaveSistema = async () => {
     setIsSavingSistema(true);
     try {
-      await saveConfig(configuracoes);
+      await saveConfigSistema(configSistemaLocal);
       toast({
         title: "Sucesso!",
         description: "Configurações do sistema salvas com sucesso!",
@@ -358,28 +580,42 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
   };
 
   const resetToDefaults = () => {
-    setConfiguracoes({
+    setConfiguracoesPersonalizacao({
       tema: 'dark',
-      corPrimaria: '#3b82f6',
-      corSecundaria: '#8b5cf6',
-      nomeEmpresa: 'Sistema',
-      logoUrl: '',
-      logo: '',
       idioma: 'pt-BR',
+      acoesRapidas: {
+        novaOS: true,
+        novoLancamento: true,
+        novoCliente: true,
+        novoUsuario: true,
+        novaOV: true,
+        abrirCaixa: true,
+        adicionarProduto: true,
+        movimentacao: true,
+        relatorios: true
+      }
+    });
+    setConfigUsuariosLocal({
       permitirCadastro: true,
       requerAprovacao: false,
       limiteUsuarios: 10,
-      notificacaoNovosUsuarios: true,
+      notificacaoNovosUsuarios: true
+    });
+    setConfigSegurancaLocal({
       autenticacaoDoisFatores: false,
       tempoSessao: 30,
       tentativasLogin: 3,
       bloqueioAutomatico: true,
-      auditoriaAtivada: true,
+      auditoriaAtivada: true
+    });
+    setConfigImpressaoLocal({
       formatoPadrao: 'A4',
       orientacaoPadrao: 'retrato',
       margemPadrao: 1,
       fontePadrao: 'Arial',
-      tamanhoFonte: 12,
+      tamanhoFonte: 12
+    });
+    setConfigSistemaLocal({
       backupAutomatico: true,
       frequenciaBackup: 'diario',
       retencaoBackup: 30,
@@ -458,22 +694,12 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
               <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Configurações da Loja</h2>
-                <p className="text-slate-600 dark:text-slate-400 mt-1">Configure os dados da sua empresa que aparecerão <strong>APENAS nos documentos impressos</strong> (ordens de serviço, orçamentos, etc.). Estes dados NÃO afetam o nome que aparece no cabeçalho da interface do sistema.</p>
+                <p className="text-slate-600 dark:text-slate-400 mt-1">Configure os dados da sua empresa que aparecerão nos documentos impressos (ordens de serviço, orçamentos, etc.) e em outros locais do sistema.</p>
               </div>
             </div>
 
             <div className="space-y-8">
               
-              {/* Aviso Importante */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-blue-800 dark:text-blue-200">
-                    <p className="font-medium mb-1">⚠️ Importante:</p>
-                    <p>As configurações desta aba são usadas <strong>APENAS para documentos impressos</strong> (ordens de serviço, orçamentos, etc.). Para alterar o nome que aparece no cabeçalho da interface do sistema, use a aba <strong>"Personalização"</strong>.</p>
-                  </div>
-                </div>
-              </div>
               
               {/* Informações Básicas */}
               <div className="space-y-6">
@@ -493,7 +719,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       className="h-12"
                       required
                     />
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Nome que aparecerá <strong>APENAS</strong> nos documentos impressos (ordens de serviço, orçamentos). Para alterar o nome no cabeçalho da interface, use a aba "Personalização".</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Nome que aparecerá nos documentos impressos (ordens de serviço, orçamentos).</p>
                   </div>
 
                   <div className="space-y-2">
@@ -505,7 +731,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       placeholder="Ex: Manutenção e Comércio de Celulares e Tablets"
                       className="h-12"
                     />
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Descrição que aparecerá abaixo do nome da empresa <strong>APENAS</strong> nos documentos impressos</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Descrição que aparecerá abaixo do nome da empresa nos documentos impressos.</p>
                   </div>
                 </div>
               </div>
@@ -532,7 +758,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       className="h-12"
                       required
                     />
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Telefone que aparecerá <strong>APENAS</strong> nos documentos impressos</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Telefone que aparecerá nos documentos impressos.</p>
                   </div>
 
                   <div className="space-y-2">
@@ -598,7 +824,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     className="resize-none"
                     required
                   />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Endereço completo que aparecerá <strong>APENAS</strong> nos documentos impressos</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Endereço completo que aparecerá nos documentos impressos.</p>
                 </div>
               </div>
 
@@ -630,7 +856,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       placeholder="123456789012345"
                       className="h-12"
                     />
-                    <p className="text-xs text-slate-500 dark:text-slate-400">IMEI padrão que aparecerá <strong>APENAS</strong> nas ordens de serviço impressas</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">IMEI padrão que aparecerá nas ordens de serviço impressas.</p>
                   </div>
                 </div>
               </div>
@@ -682,7 +908,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
             <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Tema</Label>
-                    <Select value={configuracoes.tema} onValueChange={(value) => handleConfigChange('tema', value)}>
+                    <Select value={configuracoesPersonalizacao.tema} onValueChange={(value) => handleConfigPersonalizacaoChange('tema', value)}>
         <SelectTrigger>
           <SelectValue />
         </SelectTrigger>
@@ -708,7 +934,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
 
                   <div className="space-y-2">
                     <Label>Idioma</Label>
-                    <Select value={configuracoes.idioma} onValueChange={(value) => handleConfigChange('idioma', value)}>
+                    <Select value={configuracoesPersonalizacao.idioma} onValueChange={(value) => handleConfigPersonalizacaoChange('idioma', value)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -742,8 +968,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     </div>
                   </div>
                   <Switch
-                    checked={configuracoes.acoesRapidas.novaOS}
-                    onCheckedChange={(checked) => handleConfigChange('acoesRapidas', { ...configuracoes.acoesRapidas, novaOS: checked })}
+                    checked={configuracoesPersonalizacao.acoesRapidas.novaOS}
+                    onCheckedChange={(checked) => handleConfigPersonalizacaoChange('acoesRapidas', { ...configuracoesPersonalizacao.acoesRapidas, novaOS: checked })}
                   />
                 </div>
 
@@ -756,8 +982,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     </div>
                   </div>
                   <Switch
-                    checked={configuracoes.acoesRapidas.novoLancamento}
-                    onCheckedChange={(checked) => handleConfigChange('acoesRapidas', { ...configuracoes.acoesRapidas, novoLancamento: checked })}
+                    checked={configuracoesPersonalizacao.acoesRapidas.novoLancamento}
+                    onCheckedChange={(checked) => handleConfigPersonalizacaoChange('acoesRapidas', { ...configuracoesPersonalizacao.acoesRapidas, novoLancamento: checked })}
                   />
                 </div>
 
@@ -770,8 +996,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     </div>
                   </div>
                   <Switch
-                    checked={configuracoes.acoesRapidas.novoCliente}
-                    onCheckedChange={(checked) => handleConfigChange('acoesRapidas', { ...configuracoes.acoesRapidas, novoCliente: checked })}
+                    checked={configuracoesPersonalizacao.acoesRapidas.novoCliente}
+                    onCheckedChange={(checked) => handleConfigPersonalizacaoChange('acoesRapidas', { ...configuracoesPersonalizacao.acoesRapidas, novoCliente: checked })}
                   />
                 </div>
 
@@ -784,8 +1010,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     </div>
                   </div>
                   <Switch
-                    checked={configuracoes.acoesRapidas.novoUsuario}
-                    onCheckedChange={(checked) => handleConfigChange('acoesRapidas', { ...configuracoes.acoesRapidas, novoUsuario: checked })}
+                    checked={configuracoesPersonalizacao.acoesRapidas.novoUsuario}
+                    onCheckedChange={(checked) => handleConfigPersonalizacaoChange('acoesRapidas', { ...configuracoesPersonalizacao.acoesRapidas, novoUsuario: checked })}
                   />
                 </div>
 
@@ -798,8 +1024,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     </div>
                   </div>
                   <Switch
-                    checked={configuracoes.acoesRapidas.novaOV}
-                    onCheckedChange={(checked) => handleConfigChange('acoesRapidas', { ...configuracoes.acoesRapidas, novaOV: checked })}
+                    checked={configuracoesPersonalizacao.acoesRapidas.novaOV}
+                    onCheckedChange={(checked) => handleConfigPersonalizacaoChange('acoesRapidas', { ...configuracoesPersonalizacao.acoesRapidas, novaOV: checked })}
                   />
                 </div>
 
@@ -812,8 +1038,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     </div>
                   </div>
                   <Switch
-                    checked={configuracoes.acoesRapidas.abrirCaixa}
-                    onCheckedChange={(checked) => handleConfigChange('acoesRapidas', { ...configuracoes.acoesRapidas, abrirCaixa: checked })}
+                    checked={configuracoesPersonalizacao.acoesRapidas.abrirCaixa}
+                    onCheckedChange={(checked) => handleConfigPersonalizacaoChange('acoesRapidas', { ...configuracoesPersonalizacao.acoesRapidas, abrirCaixa: checked })}
                   />
                 </div>
 
@@ -826,8 +1052,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     </div>
                   </div>
                   <Switch
-                    checked={configuracoes.acoesRapidas.adicionarProduto}
-                    onCheckedChange={(checked) => handleConfigChange('acoesRapidas', { ...configuracoes.acoesRapidas, adicionarProduto: checked })}
+                    checked={configuracoesPersonalizacao.acoesRapidas.adicionarProduto}
+                    onCheckedChange={(checked) => handleConfigPersonalizacaoChange('acoesRapidas', { ...configuracoesPersonalizacao.acoesRapidas, adicionarProduto: checked })}
                   />
                 </div>
 
@@ -840,8 +1066,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     </div>
                   </div>
                   <Switch
-                    checked={configuracoes.acoesRapidas.movimentacao}
-                    onCheckedChange={(checked) => handleConfigChange('acoesRapidas', { ...configuracoes.acoesRapidas, movimentacao: checked })}
+                    checked={configuracoesPersonalizacao.acoesRapidas.movimentacao}
+                    onCheckedChange={(checked) => handleConfigPersonalizacaoChange('acoesRapidas', { ...configuracoesPersonalizacao.acoesRapidas, movimentacao: checked })}
                   />
                 </div>
 
@@ -854,8 +1080,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     </div>
                   </div>
                   <Switch
-                    checked={configuracoes.acoesRapidas.relatorios}
-                    onCheckedChange={(checked) => handleConfigChange('acoesRapidas', { ...configuracoes.acoesRapidas, relatorios: checked })}
+                    checked={configuracoesPersonalizacao.acoesRapidas.relatorios}
+                    onCheckedChange={(checked) => handleConfigPersonalizacaoChange('acoesRapidas', { ...configuracoesPersonalizacao.acoesRapidas, relatorios: checked })}
                   />
                 </div>
               </div>
@@ -866,6 +1092,53 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                   <div className="text-sm text-blue-800 dark:text-blue-200">
                     <p className="font-medium">Dica:</p>
                     <p>As ações desabilitadas não aparecerão no dashboard principal, mas ainda podem ser acessadas através dos módulos correspondentes na barra de navegação.</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Funcionalidades do Estoque */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                Funcionalidades do Estoque
+              </CardTitle>
+              <CardDescription>Configure funcionalidades avançadas do módulo de estoque</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                    <Settings className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <Label className="font-medium text-lg">Grupos e Opções</Label>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Ativar sistema de grupos e opções para produtos</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                      Permite criar grupos de opções (ex: "Adicionais", "Tamanhos") e vinculá-las a produtos ou categorias
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={configuracoesPersonalizacao.gruposEOpcoesAtivo}
+                  onCheckedChange={(checked) => handleConfigPersonalizacaoChange('gruposEOpcoesAtivo', checked)}
+                  className="scale-110"
+                />
+              </div>
+
+              <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-emerald-800 dark:text-emerald-200">
+                    <p className="font-medium">Como funciona:</p>
+                    <ul className="mt-1 space-y-1 text-xs">
+                      <li>• Cria grupos de opções (ex: "Adicionais", "Tamanhos")</li>
+                      <li>• Define opções dentro dos grupos (ex: "Queijo Extra", "Bacon")</li>
+                      <li>• Vincula grupos a produtos ou categorias</li>
+                      <li>• Clientes escolhem quantidades no módulo de vendas</li>
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -918,8 +1191,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       <p className="text-sm text-slate-600 dark:text-slate-400">Permite que novos usuários se cadastrem</p>
                     </div>
                     <Switch
-                      checked={configuracoes.permitirCadastro}
-                      onCheckedChange={(checked) => handleConfigChange('permitirCadastro', checked)}
+                      checked={configUsuariosLocal.permitirCadastro}
+                      onCheckedChange={(checked) => handleConfigUsuariosChange('permitirCadastro', checked)}
                     />
                   </div>
 
@@ -929,8 +1202,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       <p className="text-sm text-slate-600 dark:text-slate-400">Novos cadastros precisam de aprovação</p>
                     </div>
                     <Switch
-                      checked={configuracoes.requerAprovacao}
-                      onCheckedChange={(checked) => handleConfigChange('requerAprovacao', checked)}
+                      checked={configUsuariosLocal.requerAprovacao}
+                      onCheckedChange={(checked) => handleConfigUsuariosChange('requerAprovacao', checked)}
                     />
                   </div>
 
@@ -938,11 +1211,23 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     <Label>Limite de Usuários</Label>
                     <Input
                       type="number"
-                      value={configuracoes.limiteUsuarios}
-                      onChange={(e) => handleConfigChange('limiteUsuarios', parseInt(e.target.value))}
+                      value={configUsuariosLocal.limiteUsuarios}
+                      onChange={(e) => handleConfigUsuariosChange('limiteUsuarios', parseInt(e.target.value))}
                       min="1"
                       max="100"
                     />
+                  </div>
+
+                  <div className="pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsPermissoesModalOpen(true)}
+                      className="w-full flex items-center justify-center gap-2"
+                    >
+                      <Key className="h-4 w-4" />
+                      Configurar Permissões de Usuários
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1097,8 +1382,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       <p className="text-sm text-slate-600 dark:text-slate-400">Autenticação de dois fatores</p>
                     </div>
                     <Switch
-                      checked={configuracoes.autenticacaoDoisFatores}
-                      onCheckedChange={(checked) => handleConfigChange('autenticacaoDoisFatores', checked)}
+                      checked={configSegurancaLocal.autenticacaoDoisFatores}
+                      onCheckedChange={(checked) => handleConfigSegurancaChange('autenticacaoDoisFatores', checked)}
                     />
                   </div>
 
@@ -1106,8 +1391,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     <Label>Tempo de Sessão (minutos)</Label>
                     <Input
                       type="number"
-                      value={configuracoes.tempoSessao}
-                      onChange={(e) => handleConfigChange('tempoSessao', parseInt(e.target.value))}
+                      value={configSegurancaLocal.tempoSessao}
+                      onChange={(e) => handleConfigSegurancaChange('tempoSessao', parseInt(e.target.value))}
                       min="5"
                       max="480"
                     />
@@ -1117,8 +1402,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     <Label>Tentativas de Login</Label>
                     <Input
                       type="number"
-                      value={configuracoes.tentativasLogin}
-                      onChange={(e) => handleConfigChange('tentativasLogin', parseInt(e.target.value))}
+                      value={configSegurancaLocal.tentativasLogin}
+                      onChange={(e) => handleConfigSegurancaChange('tentativasLogin', parseInt(e.target.value))}
                       min="1"
                       max="10"
                     />
@@ -1137,8 +1422,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       <p className="text-sm text-slate-600 dark:text-slate-400">Bloqueia após tentativas falhadas</p>
             </div>
                     <Switch
-                      checked={configuracoes.bloqueioAutomatico}
-                      onCheckedChange={(checked) => handleConfigChange('bloqueioAutomatico', checked)}
+                      checked={configSegurancaLocal.bloqueioAutomatico}
+                      onCheckedChange={(checked) => handleConfigSegurancaChange('bloqueioAutomatico', checked)}
                     />
                   </div>
 
@@ -1148,8 +1433,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       <p className="text-sm text-slate-600 dark:text-slate-400">Registra ações dos usuários</p>
                     </div>
                     <Switch
-                      checked={configuracoes.auditoriaAtivada}
-                      onCheckedChange={(checked) => handleConfigChange('auditoriaAtivada', checked)}
+                      checked={configSegurancaLocal.auditoriaAtivada}
+                      onCheckedChange={(checked) => handleConfigSegurancaChange('auditoriaAtivada', checked)}
                     />
                   </div>
             </CardContent>
@@ -1196,7 +1481,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
             <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Formato Padrão</Label>
-                    <Select value={configuracoes.formatoPadrao} onValueChange={(value) => handleConfigChange('formatoPadrao', value)}>
+                    <Select value={configImpressaoLocal.formatoPadrao} onValueChange={(value) => handleConfigImpressaoChange('formatoPadrao', value)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1210,7 +1495,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
 
                   <div className="space-y-2">
                     <Label>Orientação</Label>
-                    <Select value={configuracoes.orientacaoPadrao} onValueChange={(value) => handleConfigChange('orientacaoPadrao', value)}>
+                    <Select value={configImpressaoLocal.orientacaoPadrao} onValueChange={(value) => handleConfigImpressaoChange('orientacaoPadrao', value)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1225,8 +1510,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     <Label>Margem (cm)</Label>
                     <Input
                       type="number"
-                      value={configuracoes.margemPadrao}
-                      onChange={(e) => handleConfigChange('margemPadrao', parseFloat(e.target.value))}
+                      value={configImpressaoLocal.margemPadrao}
+                      onChange={(e) => handleConfigImpressaoChange('margemPadrao', parseFloat(e.target.value))}
                       min="0.5"
                       max="5"
                       step="0.1"
@@ -1242,7 +1527,7 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
             <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Fonte Padrão</Label>
-                    <Select value={configuracoes.fontePadrao} onValueChange={(value) => handleConfigChange('fontePadrao', value)}>
+                    <Select value={configImpressaoLocal.fontePadrao} onValueChange={(value) => handleConfigImpressaoChange('fontePadrao', value)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1259,8 +1544,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     <Label>Tamanho da Fonte</Label>
                     <Input
                       type="number"
-                      value={configuracoes.tamanhoFonte}
-                      onChange={(e) => handleConfigChange('tamanhoFonte', parseInt(e.target.value))}
+                      value={configImpressaoLocal.tamanhoFonte}
+                      onChange={(e) => handleConfigImpressaoChange('tamanhoFonte', parseInt(e.target.value))}
                       min="8"
                       max="24"
                     />
@@ -1313,14 +1598,14 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       <p className="text-sm text-slate-600 dark:text-slate-400">Backup automático dos dados</p>
               </div>
                     <Switch
-                      checked={configuracoes.backupAutomatico}
-                      onCheckedChange={(checked) => handleConfigChange('backupAutomatico', checked)}
+                      checked={configSistemaLocal.backupAutomatico}
+                      onCheckedChange={(checked) => handleConfigSistemaChange('backupAutomatico', checked)}
                     />
             </div>
             
                   <div className="space-y-2">
                     <Label>Frequência do Backup</Label>
-                    <Select value={configuracoes.frequenciaBackup} onValueChange={(value) => handleConfigChange('frequenciaBackup', value)}>
+                    <Select value={configSistemaLocal.frequenciaBackup} onValueChange={(value) => handleConfigSistemaChange('frequenciaBackup', value)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1337,8 +1622,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                     <Label>Retenção (dias)</Label>
                     <Input
                       type="number"
-                      value={configuracoes.retencaoBackup}
-                      onChange={(e) => handleConfigChange('retencaoBackup', parseInt(e.target.value))}
+                      value={configSistemaLocal.retencaoBackup}
+                      onChange={(e) => handleConfigSistemaChange('retencaoBackup', parseInt(e.target.value))}
                       min="1"
                       max="365"
                     />
@@ -1357,8 +1642,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       <p className="text-sm text-slate-600 dark:text-slate-400">Registra atividades do sistema</p>
               </div>
                     <Switch
-                      checked={configuracoes.logsAtivados}
-                      onCheckedChange={(checked) => handleConfigChange('logsAtivados', checked)}
+                      checked={configSistemaLocal.logsAtivados}
+                      onCheckedChange={(checked) => handleConfigSistemaChange('logsAtivados', checked)}
                     />
             </div>
             
@@ -1368,8 +1653,8 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       <p className="text-sm text-slate-600 dark:text-slate-400">Monitora performance do sistema</p>
                     </div>
                     <Switch
-                      checked={configuracoes.monitoramentoAtivo}
-                      onCheckedChange={(checked) => handleConfigChange('monitoramentoAtivo', checked)}
+                      checked={configSistemaLocal.monitoramentoAtivo}
+                      onCheckedChange={(checked) => handleConfigSistemaChange('monitoramentoAtivo', checked)}
                     />
                   </div>
                 </CardContent>
@@ -1412,6 +1697,236 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
           </div>
         </div>
       </motion.div>
+
+      {/* Modal de Permissões de Usuários - Versão Limpa */}
+      <Dialog open={isPermissoesModalOpen} onOpenChange={setIsPermissoesModalOpen}>
+        <DialogContent className="max-w-3xl w-full max-h-[85vh] p-0 overflow-hidden">
+          <div className="flex flex-col h-full max-h-[85vh]">
+            {/* HEADER */}
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+                  <Key className="h-6 w-6 text-blue-600" />
+                  Configurar Permissões de Usuários
+                </DialogTitle>
+                <DialogDescription>
+                  Selecione um módulo e configure as permissões que os usuários comuns terão acesso.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+
+            {/* CONTEÚDO PRINCIPAL */}
+            <div className="flex-1 overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
+                {/* SIDEBAR - MÓDULOS */}
+                <div className="bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+                  <div className="p-4 space-y-2">
+                    {Object.entries(permissoesUsuarios).map(([modulo, permissoes]) => {
+                      const moduloLabels = {
+                        clientes: { title: 'Clientes', icon: Users, color: 'blue' },
+                        os: { title: 'Ordens de Serviço', icon: FileText, color: 'green' },
+                        ov: { title: 'Ordens de Venda', icon: ShoppingCart, color: 'orange' },
+                        estoque: { title: 'Estoque', icon: Package, color: 'purple' },
+                        caixa: { title: 'Caixa', icon: CreditCard, color: 'emerald' },
+                        financeiro: { title: 'Financeiro', icon: DollarSign, color: 'yellow' },
+                        relatorios: { title: 'Relatórios', icon: BarChart3, color: 'indigo' },
+                        configuracoes: { title: 'Configurações', icon: Settings, color: 'red' }
+                      };
+
+                      const { title, icon: Icon, color } = moduloLabels[modulo];
+                      const isSelected = moduloSelecionado === modulo;
+                      const activeCount = Object.values(permissoes).filter(Boolean).length;
+
+                      return (
+                        <button
+                          key={modulo}
+                          onClick={() => setModuloSelecionado(modulo)}
+                          className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 text-left ${
+                            isSelected
+                              ? 'bg-blue-600 text-white shadow-md'
+                              : 'bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100'
+                          }`}
+                        >
+                          <Icon className={`h-5 w-5 ${isSelected ? 'text-white' : `text-${color}-600`}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{title}</p>
+                            <p className="text-xs opacity-75">{activeCount}/4 permissões</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ÁREA DE PERMISSÕES */}
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 overflow-y-auto">
+                  <div className="p-6">
+                    {/* TÍTULO DO MÓDULO */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                        {moduloSelecionado === 'clientes' ? '👥 Clientes' :
+                         moduloSelecionado === 'os' ? '📋 Ordens de Serviço' :
+                         moduloSelecionado === 'ov' ? '🛒 Ordens de Venda' :
+                         moduloSelecionado === 'estoque' ? '📦 Estoque' :
+                         moduloSelecionado === 'caixa' ? '💳 Caixa' :
+                         moduloSelecionado === 'financeiro' ? '💰 Financeiro' :
+                         moduloSelecionado === 'relatorios' ? '📊 Relatórios' :
+                         '⚙️ Configurações'}
+                      </h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Configure as permissões que os usuários comuns terão para este módulo
+                      </p>
+                    </div>
+
+                    {/* PERMISSÕES */}
+                    <div className="space-y-4">
+                      {Object.entries(permissoesUsuarios[moduloSelecionado])
+                        .sort(([a], [b]) => {
+                          const order = { visualizar: 0, criar: 1, editar: 2, excluir: 3 };
+                          return order[a] - order[b];
+                        })
+                        .map(([acao, valor]) => {
+                        const acaoLabels = {
+                          visualizar: { title: 'Visualizar', desc: 'Ver dados e informações do módulo', icon: Eye },
+                          criar: { title: 'Criar', desc: 'Criar novos registros e entradas', icon: Plus },
+                          editar: { title: 'Editar', desc: 'Modificar registros existentes', icon: Edit },
+                          excluir: { title: 'Excluir', desc: 'Remover registros permanentemente', icon: Trash2 }
+                        };
+
+                        // Definir cores baseadas no módulo selecionado
+                        const moduloColors = {
+                          clientes: {
+                            bg: 'bg-blue-50 dark:bg-blue-900/20',
+                            border: 'border-blue-200 dark:border-blue-800',
+                            iconActive: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+                            iconInactive: 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                          },
+                          os: {
+                            bg: 'bg-green-50 dark:bg-green-900/20',
+                            border: 'border-green-200 dark:border-green-800',
+                            iconActive: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+                            iconInactive: 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                          },
+                          ov: {
+                            bg: 'bg-orange-50 dark:bg-orange-900/20',
+                            border: 'border-orange-200 dark:border-orange-800',
+                            iconActive: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400',
+                            iconInactive: 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                          },
+                          estoque: {
+                            bg: 'bg-purple-50 dark:bg-purple-900/20',
+                            border: 'border-purple-200 dark:border-purple-800',
+                            iconActive: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+                            iconInactive: 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                          },
+                          caixa: {
+                            bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+                            border: 'border-emerald-200 dark:border-emerald-800',
+                            iconActive: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
+                            iconInactive: 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                          },
+                          financeiro: {
+                            bg: 'bg-yellow-50 dark:bg-yellow-900/20',
+                            border: 'border-yellow-200 dark:border-yellow-800',
+                            iconActive: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400',
+                            iconInactive: 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                          },
+                          relatorios: {
+                            bg: 'bg-indigo-50 dark:bg-indigo-900/20',
+                            border: 'border-indigo-200 dark:border-indigo-800',
+                            iconActive: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+                            iconInactive: 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                          },
+                          configuracoes: {
+                            bg: 'bg-red-50 dark:bg-red-900/20',
+                            border: 'border-red-200 dark:border-red-800',
+                            iconActive: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+                            iconInactive: 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                          }
+                        };
+
+                        const { title: acaoTitle, desc: acaoDesc, icon: AcaoIcon } = acaoLabels[acao];
+                        const colors = moduloColors[moduloSelecionado];
+
+                        return (
+                          <div key={acao} className={`flex items-center justify-between p-4 ${colors.bg} rounded-lg border ${colors.border}`}>
+                            <div className="flex items-center gap-4">
+                              <div className={`p-3 rounded-lg ${valor ? colors.iconActive : colors.iconInactive}`}>
+                                <AcaoIcon className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <Label className="font-semibold text-slate-900 dark:text-white">{acaoTitle}</Label>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">{acaoDesc}</p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={valor}
+                              onCheckedChange={(checked) => handlePermissaoChange(moduloSelecionado, acao, checked)}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* AVISO */}
+                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-blue-800 dark:text-blue-200">
+                          <p className="font-medium mb-1">💡 Importante:</p>
+                          <p>Estas configurações se aplicam apenas aos usuários comuns. Usuários administradores sempre terão acesso completo a todos os módulos e funcionalidades.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* FOOTER */}
+            <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsPermissoesModalOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      setIsSavingUsuarios(true);
+                      
+                      // Salvar as permissões junto com as outras configurações de usuários
+                      await saveConfigUsuarios(configUsuariosLocal);
+                      
+                      setIsPermissoesModalOpen(false);
+                      toast({
+                        title: "Sucesso!",
+                        description: "Permissões configuradas e salvas com sucesso!",
+                      });
+                    } catch (error) {
+                      console.error('Erro ao salvar permissões:', error);
+                      toast({
+                        title: "Erro",
+                        description: "Erro ao salvar permissões. Tente novamente.",
+                        variant: "destructive"
+                      });
+                    } finally {
+                      setIsSavingUsuarios(false);
+                    }
+                  }}
+                  disabled={isSavingUsuarios}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSavingUsuarios ? 'Salvando...' : 'Salvar Permissões'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

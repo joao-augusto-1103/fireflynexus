@@ -47,7 +47,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { AppContext } from '@/App';
-import { useCaixa, useOV, useFinanceiro } from '@/lib/hooks/useFirebase';
+import { useCaixa, useOV, useFinanceiro, usePermissions } from '@/lib/hooks/useFirebase';
 
 // Função para formatar moeda
 const formatCurrency = (value) => {
@@ -64,6 +64,7 @@ const CaixaModule = ({ userId }) => {
   const { data: caixaData, loading: caixaLoading, save: saveCaixa } = useCaixa();
   const { data: ordensVenda, save: saveOV } = useOV();
   const { data: financeiro } = useFinanceiro();
+  const { canCreate, canEdit, canDelete } = usePermissions();
   
   // Estados
   const [searchTerm, setSearchTerm] = useState('');
@@ -462,8 +463,8 @@ const CaixaModule = ({ userId }) => {
 
   // Verificar permissões do usuário
   const { usuarioLogado } = useContext(AppContext);
-  const podeVerValoresReais = usuarioLogado?.tipo === 'admin' || usuarioLogado?.tipo === 'administrador' || usuarioLogado?.tipo === 'financeiro';
-  const podeAcessarHistorico = usuarioLogado?.tipo === 'admin' || usuarioLogado?.tipo === 'administrador' || usuarioLogado?.tipo === 'financeiro';
+  const podeVerValoresReais = usuarioLogado?.tipo === 'administrador';
+  const podeAcessarHistorico = usuarioLogado?.tipo === 'administrador';
 
   // Função para buscar vendas não vinculadas ao caixa atual
   const buscarVendasNaoVinculadas = () => {
@@ -1250,7 +1251,7 @@ const CaixaModule = ({ userId }) => {
                   <div className="md:w-48">
                     <Label htmlFor="forma-pagamento" className="text-sm font-medium text-slate-700 dark:text-slate-300">Forma de Pagamento</Label>
                     <Select value={filtroFormaPagamento} onValueChange={setFiltroFormaPagamento}>
-                      <SelectTrigger className="mt-1 bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500">
+                      <SelectTrigger id="forma-pagamento" className="mt-1 bg-slate-50 dark:bg-slate-700 border-slate-300 dark:border-slate-600 focus:border-blue-500 focus:ring-blue-500">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1860,7 +1861,7 @@ const CaixaModule = ({ userId }) => {
             <div>
               <Label htmlFor="formaPagamento">Forma de Pagamento</Label>
               <Select value={formData.formaPagamento} onValueChange={(value) => setFormData({...formData, formaPagamento: value})}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger id="formaPagamento" className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

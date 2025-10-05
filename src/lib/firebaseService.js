@@ -26,7 +26,15 @@ class FirebaseService {
       financeiro: 'financeiro',
       usuarios: 'usuarios',
       configuracoes: 'configuracoes',
-      caixa: 'caixa'
+      configuracoes_personalizacao: 'configuracoes_personalizacao',
+      configuracoes_loja: 'configuracoes_loja',
+      configuracoes_usuarios: 'configuracoes_usuarios',
+      configuracoes_seguranca: 'configuracoes_seguranca',
+      configuracoes_impressao: 'configuracoes_impressao',
+      configuracoes_sistema: 'configuracoes_sistema',
+      caixa: 'caixa',
+      gruposOpcoes: 'grupos_opcoes',
+      opcoes: 'opcoes'
     };
     
     // Mapeamento para localStorage (fallback)
@@ -40,7 +48,15 @@ class FirebaseService {
       financeiro: 'crm_financeiro',
       usuarios: 'crm_usuarios',
       configuracoes: 'crm_configuracoes',
-      caixa: 'crm_caixa'
+      configuracoes_personalizacao: 'crm_config_personalizacao',
+      configuracoes_loja: 'crm_config_loja',
+      configuracoes_usuarios: 'crm_config_usuarios',
+      configuracoes_seguranca: 'crm_config_seguranca',
+      configuracoes_impressao: 'crm_config_impressao',
+      configuracoes_sistema: 'crm_config_sistema',
+      caixa: 'crm_caixa',
+      gruposOpcoes: 'crm_grupos_opcoes',
+      opcoes: 'crm_opcoes'
     };
     
     this.isFirebaseAvailable = false;
@@ -795,10 +811,200 @@ class FirebaseService {
     return this.subscribeToCollection('usuarios', callback);
   }
 
-  // CONFIGURAÇÕES
+  // CONFIGURAÇÕES - MÉTODOS ESPECÍFICOS PARA CADA TIPO
+
+  // CONFIGURAÇÕES DE PERSONALIZAÇÃO
+  async saveConfiguracaoPersonalizacao(configuracao, id = null) {
+    try {
+      console.log('[FirebaseService] 🚀 Salvando configuração de personalização:', configuracao);
+      
+      if (!id) {
+        try {
+          const existingConfigs = await this.getData('configuracoes_personalizacao');
+          if (existingConfigs.length > 0) {
+            id = existingConfigs[0].id;
+            console.log('[FirebaseService] ✅ Configuração de personalização existente encontrada, ID:', id);
+          }
+        } catch (error) {
+          console.warn('[FirebaseService] ⚠️ Erro ao buscar configuração existente:', error);
+        }
+      }
+      
+      const result = await this.saveData('configuracoes_personalizacao', configuracao, id);
+      localStorage.removeItem('crm_config_cache');
+      
+      console.log('[FirebaseService] ✅ Configuração de personalização salva com sucesso:', result);
+      return result;
+    } catch (error) {
+      console.error('[FirebaseService] ❌ Erro ao salvar configuração de personalização:', error);
+      throw error;
+    }
+  }
+
+  async getConfiguracaoPersonalizacao() {
+    const configs = await this.getData('configuracoes_personalizacao');
+    return configs.length > 0 ? configs[0] : null;
+  }
+
+  // CONFIGURAÇÕES DA LOJA
+  async saveConfiguracaoLoja(configuracao, id = null) {
+    try {
+      console.log('[FirebaseService] 🚀 Salvando configuração da loja:', configuracao);
+      
+      if (!id) {
+        try {
+          const existingConfigs = await this.getData('configuracoes_loja');
+          if (existingConfigs.length > 0) {
+            id = existingConfigs[0].id;
+            console.log('[FirebaseService] ✅ Configuração da loja existente encontrada, ID:', id);
+          }
+        } catch (error) {
+          console.warn('[FirebaseService] ⚠️ Erro ao buscar configuração da loja existente:', error);
+        }
+      }
+      
+      const result = await this.saveData('configuracoes_loja', configuracao, id);
+      console.log('[FirebaseService] ✅ Configuração da loja salva com sucesso:', result);
+      return result;
+    } catch (error) {
+      console.error('[FirebaseService] ❌ Erro ao salvar configuração da loja:', error);
+      throw error;
+    }
+  }
+
+  async getConfiguracaoLoja() {
+    const configs = await this.getData('configuracoes_loja');
+    return configs.length > 0 ? configs[0] : null;
+  }
+
+  // CONFIGURAÇÕES DE USUÁRIOS
+  async saveConfiguracaoUsuarios(configuracao, id = null) {
+    try {
+      console.log('[FirebaseService] 🚀 Salvando configuração de usuários:', configuracao);
+      
+      if (!id) {
+        try {
+          const existingConfigs = await this.getData('configuracoes_usuarios');
+          if (existingConfigs.length > 0) {
+            id = existingConfigs[0].id;
+            console.log('[FirebaseService] ✅ Configuração de usuários existente encontrada, ID:', id);
+          }
+        } catch (error) {
+          console.warn('[FirebaseService] ⚠️ Erro ao buscar configuração de usuários existente:', error);
+        }
+      }
+      
+      const result = await this.saveData('configuracoes_usuarios', configuracao, id);
+      console.log('[FirebaseService] ✅ Configuração de usuários salva com sucesso:', result);
+      return result;
+    } catch (error) {
+      console.error('[FirebaseService] ❌ Erro ao salvar configuração de usuários:', error);
+      throw error;
+    }
+  }
+
+  async getConfiguracaoUsuarios() {
+    const configs = await this.getData('configuracoes_usuarios');
+    return configs.length > 0 ? configs[0] : null;
+  }
+
+  // CONFIGURAÇÕES DE SEGURANÇA
+  async saveConfiguracaoSeguranca(configuracao, id = null) {
+    try {
+      console.log('[FirebaseService] 🚀 Salvando configuração de segurança:', configuracao);
+      
+      if (!id) {
+        try {
+          const existingConfigs = await this.getData('configuracoes_seguranca');
+          if (existingConfigs.length > 0) {
+            id = existingConfigs[0].id;
+            console.log('[FirebaseService] ✅ Configuração de segurança existente encontrada, ID:', id);
+          }
+        } catch (error) {
+          console.warn('[FirebaseService] ⚠️ Erro ao buscar configuração de segurança existente:', error);
+        }
+      }
+      
+      const result = await this.saveData('configuracoes_seguranca', configuracao, id);
+      console.log('[FirebaseService] ✅ Configuração de segurança salva com sucesso:', result);
+      return result;
+    } catch (error) {
+      console.error('[FirebaseService] ❌ Erro ao salvar configuração de segurança:', error);
+      throw error;
+    }
+  }
+
+  async getConfiguracaoSeguranca() {
+    const configs = await this.getData('configuracoes_seguranca');
+    return configs.length > 0 ? configs[0] : null;
+  }
+
+  // CONFIGURAÇÕES DE IMPRESSÃO
+  async saveConfiguracaoImpressao(configuracao, id = null) {
+    try {
+      console.log('[FirebaseService] 🚀 Salvando configuração de impressão:', configuracao);
+      
+      if (!id) {
+        try {
+          const existingConfigs = await this.getData('configuracoes_impressao');
+          if (existingConfigs.length > 0) {
+            id = existingConfigs[0].id;
+            console.log('[FirebaseService] ✅ Configuração de impressão existente encontrada, ID:', id);
+          }
+        } catch (error) {
+          console.warn('[FirebaseService] ⚠️ Erro ao buscar configuração de impressão existente:', error);
+        }
+      }
+      
+      const result = await this.saveData('configuracoes_impressao', configuracao, id);
+      console.log('[FirebaseService] ✅ Configuração de impressão salva com sucesso:', result);
+      return result;
+    } catch (error) {
+      console.error('[FirebaseService] ❌ Erro ao salvar configuração de impressão:', error);
+      throw error;
+    }
+  }
+
+  async getConfiguracaoImpressao() {
+    const configs = await this.getData('configuracoes_impressao');
+    return configs.length > 0 ? configs[0] : null;
+  }
+
+  // CONFIGURAÇÕES DO SISTEMA
+  async saveConfiguracaoSistema(configuracao, id = null) {
+    try {
+      console.log('[FirebaseService] 🚀 Salvando configuração do sistema:', configuracao);
+      
+      if (!id) {
+        try {
+          const existingConfigs = await this.getData('configuracoes_sistema');
+          if (existingConfigs.length > 0) {
+            id = existingConfigs[0].id;
+            console.log('[FirebaseService] ✅ Configuração do sistema existente encontrada, ID:', id);
+          }
+        } catch (error) {
+          console.warn('[FirebaseService] ⚠️ Erro ao buscar configuração do sistema existente:', error);
+        }
+      }
+      
+      const result = await this.saveData('configuracoes_sistema', configuracao, id);
+      console.log('[FirebaseService] ✅ Configuração do sistema salva com sucesso:', result);
+      return result;
+    } catch (error) {
+      console.error('[FirebaseService] ❌ Erro ao salvar configuração do sistema:', error);
+      throw error;
+    }
+  }
+
+  async getConfiguracaoSistema() {
+    const configs = await this.getData('configuracoes_sistema');
+    return configs.length > 0 ? configs[0] : null;
+  }
+
+  // MÉTODO COMPATIBILIDADE - PARA MANTÊ-LO FUNCIONANDO
   async saveConfiguracao(configuracao, id = null) {
     try {
-      console.log('[FirebaseService] 🚀 Salvando configuração:', configuracao);
+      console.log('[FirebaseService] 🚀 Salvando configuração (compatibilidade):', configuracao);
       
       // Se não há ID, buscar configuração existente
       if (!id) {
