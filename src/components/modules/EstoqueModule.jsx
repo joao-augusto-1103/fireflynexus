@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 import { Plus, Search, Edit, Trash2, FolderTree, BarChart3, TrendingUp, TrendingDown, X, ZoomIn, AlertTriangle, DollarSign, Package, Tag, Camera, Download, ShoppingCart, Eye, EyeOff, Menu, Settings } from 'lucide-react';
+import HamburgerMenuIcon from '@/components/ui/HamburgerMenuIcon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,6 +56,10 @@ const EstoqueModule = () => {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleteType, setDeleteType] = useState(''); // 'produto' ou 'categoria'
+  
+  // Estados para confirmação de exclusão de movimentações
+  const [confirmDeleteMovOpen, setConfirmDeleteMovOpen] = useState(false);
+  const [movimentacaoToDelete, setMovimentacaoToDelete] = useState(null);
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -417,6 +422,30 @@ const EstoqueModule = () => {
         title: "Erro", 
         description: "Erro ao remover produto. Tente novamente.",
         variant: "destructive" 
+      });
+    }
+  };
+
+  // Funções para exclusão de movimentações
+  const handleDeleteMovimentacaoClick = (movimentacao) => {
+    setMovimentacaoToDelete(movimentacao);
+    setConfirmDeleteMovOpen(true);
+  };
+
+  const handleDeleteMovimentacao = async () => {
+    if (!movimentacaoToDelete) return;
+    
+    try {
+      await removeMovimentacao(movimentacaoToDelete.id);
+      toast({ title: "Sucesso!", description: "Movimentação removida!" });
+      setConfirmDeleteMovOpen(false);
+      setMovimentacaoToDelete(null);
+    } catch (error) {
+      console.error('Erro ao remover movimentação:', error);
+      toast({ 
+        title: "Erro!", 
+        description: "Não foi possível remover a movimentação. Tente novamente.",
+        variant: "destructive"
       });
     }
   };
@@ -1578,10 +1607,10 @@ const EstoqueModule = () => {
         <div className="flex-1">
           {/* TABS - MOVIDAS PARA CIMA */}
           <Tabs defaultValue="produtos" className="mb-6">
-            <TabsList className={`h-16 px-2 bg-slate-100 dark:bg-slate-700 relative overflow-hidden w-full ${gruposEOpcoesAtivo ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            <TabsList className={`h-20 px-6 bg-transparent relative overflow-hidden w-full ${gruposEOpcoesAtivo ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
               <TabsTrigger 
                 value="produtos" 
-                className="px-8 py-4 relative z-10 data-[state=active]:bg-orange-500 data-[state=active]:shadow-lg data-[state=active]:text-white dark:data-[state=active]:bg-orange-500 dark:data-[state=active]:text-white transition-all duration-300 ease-in-out hover:bg-orange-100 dark:hover:bg-orange-900/30 text-base font-medium flex-1 border-2 border-orange-500/30 hover:border-orange-500/60 data-[state=active]:border-orange-500"
+                className="px-8 py-5 relative z-10 data-[state=active]:bg-orange-500 data-[state=active]:shadow-xl data-[state=active]:text-white dark:data-[state=active]:bg-orange-500 dark:data-[state=active]:text-white transition-all duration-300 ease-in-out hover:bg-orange-100 dark:hover:bg-orange-900/30 text-base font-semibold flex-1 border-2 border-orange-500/30 hover:border-orange-500/60 data-[state=active]:border-orange-500 rounded-xl hover:scale-105 data-[state=active]:scale-105"
               >
                 <Package className="h-5 w-5 mr-3 transition-transform duration-200" />
                 Produtos
@@ -1590,16 +1619,16 @@ const EstoqueModule = () => {
               {gruposEOpcoesAtivo && (
                 <TabsTrigger 
                   value="opcoes" 
-                  className="px-8 py-4 relative z-10 data-[state=active]:bg-purple-500 data-[state=active]:shadow-lg data-[state=active]:text-white dark:data-[state=active]:bg-purple-500 dark:data-[state=active]:text-white transition-all duration-300 ease-in-out hover:bg-purple-100 dark:hover:bg-purple-900/30 text-base font-medium flex-1 border-2 border-purple-500/30 hover:border-purple-500/60 data-[state=active]:border-purple-500"
+                  className="px-8 py-5 relative z-10 data-[state=active]:bg-green-500 data-[state=active]:shadow-xl data-[state=active]:text-white dark:data-[state=active]:bg-green-500 dark:data-[state=active]:text-white transition-all duration-300 ease-in-out hover:bg-green-100 dark:hover:bg-green-900/30 text-base font-semibold flex-1 border-2 border-green-500/30 hover:border-green-500/60 data-[state=active]:border-green-500 rounded-xl hover:scale-105 data-[state=active]:scale-105"
                 >
-                  <Settings className="h-5 w-5 mr-3 transition-transform duration-200" />
+                  <HamburgerMenuIcon className="h-5 w-5 mr-3 transition-transform duration-200" />
                   Opções
                 </TabsTrigger>
               )}
               
               <TabsTrigger 
                 value="movimentacoes" 
-                className="px-8 py-4 relative z-10 data-[state=active]:bg-orange-500 data-[state=active]:shadow-lg data-[state=active]:text-white dark:data-[state=active]:bg-orange-500 dark:data-[state=active]:text-white transition-all duration-300 ease-in-out hover:bg-orange-100 dark:hover:bg-orange-900/30 text-base font-medium flex-1 border-2 border-orange-500/30 hover:border-orange-500/60 data-[state=active]:border-orange-500"
+                className="px-8 py-5 relative z-10 data-[state=active]:bg-red-500 data-[state=active]:shadow-xl data-[state=active]:text-white dark:data-[state=active]:bg-red-500 dark:data-[state=active]:text-white transition-all duration-300 ease-in-out hover:bg-red-100 dark:hover:bg-red-900/30 text-base font-semibold flex-1 border-2 border-red-500/30 hover:border-red-500/60 data-[state=active]:border-red-500 rounded-xl hover:scale-105 data-[state=active]:scale-105"
               >
                 <BarChart3 className="h-5 w-5 mr-3 transition-transform duration-200" />
                 Movimentações
@@ -2471,7 +2500,7 @@ const EstoqueModule = () => {
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                        <Settings className="h-7 w-7 text-purple-600 dark:text-purple-400" />
+                        <HamburgerMenuIcon className="h-7 w-7 text-green-600 dark:text-green-400" />
                         Grupos e Opções
                       </h2>
                       <p className="text-slate-600 dark:text-slate-400 mt-2">
@@ -2480,10 +2509,10 @@ const EstoqueModule = () => {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
                     <div className="flex items-center gap-4 mb-4">
-                      <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                        <Settings className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                      <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                        <HamburgerMenuIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -2627,11 +2656,7 @@ const EstoqueModule = () => {
                   </p>
                   <div className="flex gap-3 justify-center">
                     <Button
-                      onClick={() => {
-                        if (!canCreate('estoque')) return;
-                        if (!canCreate('estoque')) return;
-    setIsMovDialogOpen(true);
-                      }}
+                      onClick={() => setIsMovDialogOpen(true)}
                       className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       <Plus className="h-5 w-5 mr-2" />
@@ -2700,6 +2725,18 @@ const EstoqueModule = () => {
                             <Package className="h-3 w-3" />
                             {new Date(mov.createdAt?.toDate ? mov.createdAt.toDate() : mov.createdAt).toLocaleString('pt-BR')}
                           </p>
+                        </div>
+                        
+                        {/* Botão de exclusão */}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteMovimentacaoClick(mov)}
+                            className="h-8 w-8 text-red-500 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     </motion.div>
@@ -4020,6 +4057,18 @@ const EstoqueModule = () => {
             ? `Tem certeza que deseja excluir o produto "${itemToDelete?.nome}"? Esta ação não pode ser desfeita.`
             : `Tem certeza que deseja excluir a categoria "${itemToDelete?.nome}"? Todos os produtos desta categoria também serão removidos. Esta ação não pode ser desfeita.`
         }
+        confirmText="Sim, Excluir"
+        cancelText="Cancelar"
+        type="delete"
+      />
+
+      {/* Modal de Confirmação de Exclusão de Movimentação */}
+      <ConfirmDialog
+        open={confirmDeleteMovOpen}
+        onOpenChange={setConfirmDeleteMovOpen}
+        onConfirm={handleDeleteMovimentacao}
+        title="Excluir Movimentação"
+        description={`Tem certeza que deseja excluir esta movimentação de ${movimentacaoToDelete?.tipo === 'entrada' ? 'entrada' : 'saída'} do produto "${movimentacaoToDelete?.produtoNome}"? Esta ação não pode ser desfeita.`}
         confirmText="Sim, Excluir"
         cancelText="Cancelar"
         type="delete"

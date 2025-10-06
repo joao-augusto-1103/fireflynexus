@@ -13,6 +13,9 @@ import {
   RotateCcw,
   Building2,
   MapPin,
+  Monitor,
+  Receipt,
+  Repeat,
   Phone,
   MessageSquare,
   FileText,
@@ -39,7 +42,28 @@ import {
   EyeOff,
   Plus,
   Edit,
-  Trash2
+  Trash2,
+  Calendar,
+  Tag,
+  Info,
+  User,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  Target,
+  Calculator,
+  PieChart,
+  UserPlus,
+  Heart,
+  Layers,
+  Star,
+  History,
+  BookOpen,
+  LineChart,
+  Truck,
+  Percent,
+  Wrench,
+  Timer
   } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,6 +126,80 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
       adicionarProduto: true,
       movimentacao: true,
       relatorios: true
+    },
+    // Relatórios do Sistema (71 implementados)
+    relatorios: {
+      'vendas-por-periodo': true,
+      'vendas-por-cliente': true,
+      'vendas-por-produto': true,
+      'vendas-por-categoria': true,
+      'vendas-por-vendedor': true,
+      'receitas-periodo': true,
+      'despesas-periodo': true,
+      'fluxo-caixa-detalhado': true,
+      'receitas-despesas': true,
+      'contas-receber': true,
+      'contas-pagar': true,
+      'margem-lucro': true,
+      'roi-produtos': true,
+      'custo-venda': true,
+      'lucratividade-categoria': true,
+      'projecao-receitas': true,
+      'estoque-atual': true,
+      'produtos-baixo-estoque': true,
+      'produtos-sem-estoque': true,
+      'movimentacao-estoque': true,
+      'giro-estoque': true,
+      'valor-estoque': true,
+      'produtos-vencidos': true,
+      'produtos-proximos-vencimento': true,
+      'entradas-estoque': true,
+      'saidas-estoque': true,
+      'clientes-cadastrados': true,
+      'clientes-ativos': true,
+      'clientes-inativos': true,
+      'novos-clientes': true,
+      'clientes-fidelidade': true,
+      'segmentacao-clientes': true,
+      'satisfacao-clientes': true,
+      'clientes-potenciais': true,
+      'historico-cliente': true,
+      'geolocalizacao-clientes': true,
+      'catalogo-produtos': true,
+      'produtos-mais-vendidos': true,
+      'produtos-menos-vendidos': true,
+      'produtos-mais-lucrativos': true,
+      'sazonalidade-produtos': true,
+      'analise-precos': true,
+      'margem-produto': true,
+      'produtos-categoria': true,
+      'produtos-fornecedor': true,
+      'produtos-promocao': true,
+      'ordens-servico': true,
+      'servicos-concluidos': true,
+      'servicos-pendentes': true,
+      'tempo-medio-servico': true,
+      'servicos-atrasados': true,
+      'servicos-tecnico': true,
+      'servicos-tipo': true,
+      'satisfacao-servicos': true,
+      'custos-servicos': true,
+      'agendamentos': true,
+      'performance-vendedores': true,
+      'metas-vendas': true,
+      'conversao-leads': true,
+      'tempo-resposta': true,
+      'produtividade-equipe': true,
+      'eficiencia-processos': true,
+      'qualidade-atendimento': true,
+      'retencao-clientes': true,
+      'crescimento-receita': true,
+      'market-share': true,
+      'vendas-por-regiao': true,
+      'vendas-por-canal': true,
+      'vendas-por-forma-pagamento': true,
+      'ticket-medio-cliente': true,
+      'frequencia-compra': true
     }
   });
 
@@ -363,6 +461,16 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
 
   const handleConfigPersonalizacaoChange = (key, value) => {
     setConfiguracoesPersonalizacao(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleRelatorioChange = (relatorioId, enabled) => {
+    setConfiguracoesPersonalizacao(prev => ({
+      ...prev,
+      relatorios: {
+        ...prev.relatorios,
+        [relatorioId]: enabled
+      }
+    }));
   };
 
   const handleConfigLojaChange = (key, value) => {
@@ -1139,6 +1247,1240 @@ const ConfiguracoesModule = ({ usuarioLogado }) => {
                       <li>• Vincula grupos a produtos ou categorias</li>
                       <li>• Clientes escolhem quantidades no módulo de vendas</li>
                     </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Relatórios do Sistema */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                Relatórios do Sistema
+              </CardTitle>
+              <CardDescription>Habilite ou desabilite relatórios específicos que aparecem na aba de relatórios</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                {/* Vendas por Período */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Vendas por Período</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de vendas filtradas por período</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['vendas-por-periodo']}
+                    onCheckedChange={(checked) => handleRelatorioChange('vendas-por-periodo', checked)}
+                  />
+                </div>
+
+                {/* Vendas por Cliente */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                      <Users className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Vendas por Cliente</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de vendas agrupadas por cliente</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['vendas-por-cliente']}
+                    onCheckedChange={(checked) => handleRelatorioChange('vendas-por-cliente', checked)}
+                  />
+                </div>
+
+                {/* Vendas por Produto */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <Package className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Vendas por Produto</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de vendas agrupadas por produto</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['vendas-por-produto']}
+                    onCheckedChange={(checked) => handleRelatorioChange('vendas-por-produto', checked)}
+                  />
+                </div>
+
+                {/* Vendas por Categoria */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                      <Tag className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Vendas por Categoria</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de vendas agrupadas por categoria</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['vendas-por-categoria']}
+                    onCheckedChange={(checked) => handleRelatorioChange('vendas-por-categoria', checked)}
+                  />
+                </div>
+
+                {/* Vendas por Vendedor */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <User className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Vendas por Vendedor</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de vendas agrupadas por vendedor</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['vendas-por-vendedor']}
+                    onCheckedChange={(checked) => handleRelatorioChange('vendas-por-vendedor', checked)}
+                  />
+                </div>
+
+                {/* Receitas por Período */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                      <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Receitas por Período</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de receitas filtradas por período</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['receitas-periodo']}
+                    onCheckedChange={(checked) => handleRelatorioChange('receitas-periodo', checked)}
+                  />
+                </div>
+
+                {/* Despesas por Período */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Despesas por Período</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de despesas filtradas por período</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['despesas-periodo']}
+                    onCheckedChange={(checked) => handleRelatorioChange('despesas-periodo', checked)}
+                  />
+                </div>
+
+                {/* Fluxo de Caixa Detalhado */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Fluxo de Caixa Detalhado</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório detalhado do fluxo de caixa</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['fluxo-caixa-detalhado']}
+                    onCheckedChange={(checked) => handleRelatorioChange('fluxo-caixa-detalhado', checked)}
+                  />
+                </div>
+
+                {/* Receitas vs Despesas */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                      <BarChart3 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Receitas vs Despesas</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Comparativo entre receitas e despesas</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['receitas-despesas']}
+                    onCheckedChange={(checked) => handleRelatorioChange('receitas-despesas', checked)}
+                  />
+                </div>
+
+                {/* Contas a Receber */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                      <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Contas a Receber</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de contas a receber pendentes</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['contas-receber']}
+                    onCheckedChange={(checked) => handleRelatorioChange('contas-receber', checked)}
+                  />
+                </div>
+
+                {/* Contas a Pagar */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                      <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Contas a Pagar</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de contas a pagar pendentes</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['contas-pagar']}
+                    onCheckedChange={(checked) => handleRelatorioChange('contas-pagar', checked)}
+                  />
+                </div>
+
+                {/* Margem de Lucro */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Margem de Lucro</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de margem de lucro por produto/categoria</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['margem-lucro']}
+                    onCheckedChange={(checked) => handleRelatorioChange('margem-lucro', checked)}
+                  />
+                </div>
+
+                {/* ROI por Produto */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                      <BarChart3 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">ROI por Produto</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de retorno sobre investimento por produto</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['roi-produtos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('roi-produtos', checked)}
+                  />
+                </div>
+
+                {/* Custo por Venda */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+                      <Calculator className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Custo por Venda</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de custos associados a cada venda</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['custo-venda']}
+                    onCheckedChange={(checked) => handleRelatorioChange('custo-venda', checked)}
+                  />
+                </div>
+
+                {/* Lucratividade por Categoria */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-lg">
+                      <PieChart className="h-4 w-4 text-pink-600 dark:text-pink-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Lucratividade por Categoria</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de lucratividade por categoria de produto</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['lucratividade-categoria']}
+                    onCheckedChange={(checked) => handleRelatorioChange('lucratividade-categoria', checked)}
+                  />
+                </div>
+
+                {/* Projeção de Receitas */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
+                      <TrendingUp className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Projeção de Receitas</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de projeção de receitas futuras</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['projecao-receitas']}
+                    onCheckedChange={(checked) => handleRelatorioChange('projecao-receitas', checked)}
+                  />
+                </div>
+
+                {/* Estoque Atual */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                      <Package className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Estoque Atual</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de estoque atual de produtos</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['estoque-atual']}
+                    onCheckedChange={(checked) => handleRelatorioChange('estoque-atual', checked)}
+                  />
+                </div>
+
+                {/* Produtos com Baixo Estoque */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtos com Baixo Estoque</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de produtos com estoque baixo ou zerado</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtos-baixo-estoque']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtos-baixo-estoque', checked)}
+                  />
+                </div>
+
+                {/* Produtos sem Estoque */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-100 dark:bg-gray-900/30 rounded-lg">
+                      <Package className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtos sem Estoque</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de produtos com estoque zerado</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtos-sem-estoque']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtos-sem-estoque', checked)}
+                  />
+                </div>
+
+                {/* Movimentação de Estoque */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Movimentação de Estoque</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de movimentações de entrada e saída do estoque</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['movimentacao-estoque']}
+                    onCheckedChange={(checked) => handleRelatorioChange('movimentacao-estoque', checked)}
+                  />
+                </div>
+
+                {/* Giro de Estoque */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <RotateCcw className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Giro de Estoque</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de velocidade de rotação do estoque</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['giro-estoque']}
+                    onCheckedChange={(checked) => handleRelatorioChange('giro-estoque', checked)}
+                  />
+                </div>
+
+                {/* Valor do Estoque */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                      <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Valor do Estoque</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de valor monetário total do estoque</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['valor-estoque']}
+                    onCheckedChange={(checked) => handleRelatorioChange('valor-estoque', checked)}
+                  />
+                </div>
+
+                {/* Produtos Vencidos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtos Vencidos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de produtos com data de validade vencida</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtos-vencidos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtos-vencidos', checked)}
+                  />
+                </div>
+
+                {/* Produtos Próximos ao Vencimento */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                      <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtos Próximos ao Vencimento</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de produtos próximos da data de validade</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtos-proximos-vencimento']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtos-proximos-vencimento', checked)}
+                  />
+                </div>
+
+                {/* Entradas de Estoque */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Entradas de Estoque</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de entradas e compras de produtos no estoque</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['entradas-estoque']}
+                    onCheckedChange={(checked) => handleRelatorioChange('entradas-estoque', checked)}
+                  />
+                </div>
+
+                {/* Saídas de Estoque */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Saídas de Estoque</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de saídas e vendas de produtos do estoque</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['saidas-estoque']}
+                    onCheckedChange={(checked) => handleRelatorioChange('saidas-estoque', checked)}
+                  />
+                </div>
+
+                {/* Clientes Cadastrados */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Clientes Cadastrados</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de todos os clientes cadastrados no sistema</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['clientes-cadastrados']}
+                    onCheckedChange={(checked) => handleRelatorioChange('clientes-cadastrados', checked)}
+                  />
+                </div>
+
+                {/* Clientes Ativos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Clientes Ativos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de clientes com status ativo no sistema</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['clientes-ativos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('clientes-ativos', checked)}
+                  />
+                </div>
+
+                {/* Clientes Inativos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <UserX className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Clientes Inativos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de clientes com status inativo no sistema</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['clientes-inativos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('clientes-inativos', checked)}
+                  />
+                </div>
+
+                {/* Novos Clientes */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                      <UserPlus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Novos Clientes</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de clientes cadastrados recentemente</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['novos-clientes']}
+                    onCheckedChange={(checked) => handleRelatorioChange('novos-clientes', checked)}
+                  />
+                </div>
+
+                {/* Clientes Fidelidade */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <Heart className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Clientes Fidelidade</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de clientes com maior fidelidade e recorrência</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['clientes-fidelidade']}
+                    onCheckedChange={(checked) => handleRelatorioChange('clientes-fidelidade', checked)}
+                  />
+                </div>
+
+                {/* Segmentação de Clientes */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                      <Layers className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Segmentação de Clientes</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de segmentação e categorização de clientes</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['segmentacao-clientes']}
+                    onCheckedChange={(checked) => handleRelatorioChange('segmentacao-clientes', checked)}
+                  />
+                </div>
+
+                {/* Satisfação dos Clientes */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                      <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Satisfação dos Clientes</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de avaliação e satisfação dos clientes</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['satisfacao-clientes']}
+                    onCheckedChange={(checked) => handleRelatorioChange('satisfacao-clientes', checked)}
+                  />
+                </div>
+
+                {/* Clientes Potenciais */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                      <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Clientes Potenciais</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de clientes com potencial de compra</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['clientes-potenciais']}
+                    onCheckedChange={(checked) => handleRelatorioChange('clientes-potenciais', checked)}
+                  />
+                </div>
+
+                {/* Histórico por Cliente */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <History className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Histórico por Cliente</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de histórico completo de compras por cliente</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['historico-cliente']}
+                    onCheckedChange={(checked) => handleRelatorioChange('historico-cliente', checked)}
+                  />
+                </div>
+
+                {/* Geolocalização de Clientes */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
+                      <MapPin className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Geolocalização de Clientes</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de distribuição geográfica dos clientes</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['geolocalizacao-clientes']}
+                    onCheckedChange={(checked) => handleRelatorioChange('geolocalizacao-clientes', checked)}
+                  />
+                </div>
+
+                {/* Catálogo de Produtos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                      <BookOpen className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Catálogo de Produtos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório completo do catálogo de produtos</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['catalogo-produtos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('catalogo-produtos', checked)}
+                  />
+                </div>
+
+                {/* Produtos Mais Vendidos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtos Mais Vendidos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório dos produtos com maior volume de vendas</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtos-mais-vendidos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtos-mais-vendidos', checked)}
+                  />
+                </div>
+
+                {/* Produtos Menos Vendidos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtos Menos Vendidos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório dos produtos com menor volume de vendas</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtos-menos-vendidos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtos-menos-vendidos', checked)}
+                  />
+                </div>
+
+                {/* Produtos Mais Lucrativos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                      <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtos Mais Lucrativos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório dos produtos com maior margem de lucro</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtos-mais-lucrativos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtos-mais-lucrativos', checked)}
+                  />
+                </div>
+
+                {/* Sazonalidade de Produtos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+                      <Calendar className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Sazonalidade de Produtos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de variação sazonal nas vendas de produtos</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['sazonalidade-produtos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('sazonalidade-produtos', checked)}
+                  />
+                </div>
+
+                {/* Análise de Preços */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
+                      <LineChart className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Análise de Preços</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de análise comparativa de preços de produtos</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['analise-precos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('analise-precos', checked)}
+                  />
+                </div>
+
+                {/* Margem por Produto */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Margem por Produto</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de margem de lucro individual por produto</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['margem-produto']}
+                    onCheckedChange={(checked) => handleRelatorioChange('margem-produto', checked)}
+                  />
+                </div>
+
+                {/* Produtos por Categoria */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                      <Tag className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtos por Categoria</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de produtos organizados por categoria</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtos-categoria']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtos-categoria', checked)}
+                  />
+                </div>
+
+                {/* Produtos por Fornecedor */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-100 dark:bg-slate-900/30 rounded-lg">
+                      <Truck className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtos por Fornecedor</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de produtos organizados por fornecedor</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtos-fornecedor']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtos-fornecedor', checked)}
+                  />
+                </div>
+
+                {/* Produtos em Promoção */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <Percent className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtos em Promoção</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de produtos com desconto ou promoção ativa</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtos-promocao']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtos-promocao', checked)}
+                  />
+                </div>
+
+                {/* Ordens de Serviço */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Wrench className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Ordens de Serviço</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de ordens de serviço cadastradas</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['ordens-servico']}
+                    onCheckedChange={(checked) => handleRelatorioChange('ordens-servico', checked)}
+                  />
+                </div>
+
+                {/* Serviços Concluídos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Serviços Concluídos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de serviços finalizados e entregues</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['servicos-concluidos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('servicos-concluidos', checked)}
+                  />
+                </div>
+
+                {/* Serviços Pendentes */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                      <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Serviços Pendentes</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de serviços aguardando conclusão</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['servicos-pendentes']}
+                    onCheckedChange={(checked) => handleRelatorioChange('servicos-pendentes', checked)}
+                  />
+                </div>
+
+                {/* Tempo Médio de Serviço */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <Timer className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Tempo Médio de Serviço</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de tempo médio para conclusão de serviços</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['tempo-medio-servico']}
+                    onCheckedChange={(checked) => handleRelatorioChange('tempo-medio-servico', checked)}
+                  />
+                </div>
+
+                {/* Serviços Atrasados */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Serviços Atrasados</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de serviços com prazo de entrega vencido</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['servicos-atrasados']}
+                    onCheckedChange={(checked) => handleRelatorioChange('servicos-atrasados', checked)}
+                  />
+                </div>
+
+                {/* Serviços por Técnico */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                      <User className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Serviços por Técnico</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de serviços atribuídos por técnico</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['servicos-tecnico']}
+                    onCheckedChange={(checked) => handleRelatorioChange('servicos-tecnico', checked)}
+                  />
+                </div>
+
+                {/* Serviços por Tipo */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+                      <Layers className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Serviços por Tipo</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de serviços categorizados por tipo</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['servicos-tipo']}
+                    onCheckedChange={(checked) => handleRelatorioChange('servicos-tipo', checked)}
+                  />
+                </div>
+
+                {/* Satisfação dos Serviços */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                      <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Satisfação dos Serviços</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de avaliação e satisfação dos serviços prestados</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['satisfacao-servicos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('satisfacao-servicos', checked)}
+                  />
+                </div>
+
+                {/* Custos dos Serviços */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                      <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Custos dos Serviços</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de custos e despesas dos serviços prestados</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['custos-servicos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('custos-servicos', checked)}
+                  />
+                </div>
+
+                {/* Agendamentos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Agendamentos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de agendamentos de serviços</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['agendamentos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('agendamentos', checked)}
+                  />
+                </div>
+
+                {/* Performance dos Vendedores */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Performance dos Vendedores</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de desempenho e produtividade dos vendedores</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['performance-vendedores']}
+                    onCheckedChange={(checked) => handleRelatorioChange('performance-vendedores', checked)}
+                  />
+                </div>
+
+                {/* Metas de Vendas */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                      <Target className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Metas de Vendas</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de cumprimento de metas de vendas</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['metas-vendas']}
+                    onCheckedChange={(checked) => handleRelatorioChange('metas-vendas', checked)}
+                  />
+                </div>
+
+                {/* Conversão de Leads */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Conversão de Leads</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de taxa de conversão de leads em vendas</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['conversao-leads']}
+                    onCheckedChange={(checked) => handleRelatorioChange('conversao-leads', checked)}
+                  />
+                </div>
+
+                {/* Tempo de Resposta */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
+                      <Timer className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Tempo de Resposta</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de tempo médio de resposta a clientes</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['tempo-resposta']}
+                    onCheckedChange={(checked) => handleRelatorioChange('tempo-resposta', checked)}
+                  />
+                </div>
+
+                {/* Produtividade da Equipe */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                      <Users className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Produtividade da Equipe</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de produtividade e desempenho da equipe</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['produtividade-equipe']}
+                    onCheckedChange={(checked) => handleRelatorioChange('produtividade-equipe', checked)}
+                  />
+                </div>
+
+                {/* Eficiência dos Processos */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+                      <Settings className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Eficiência dos Processos</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de eficiência e otimização dos processos</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['eficiencia-processos']}
+                    onCheckedChange={(checked) => handleRelatorioChange('eficiencia-processos', checked)}
+                  />
+                </div>
+
+                {/* Qualidade do Atendimento */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                      <Star className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Qualidade do Atendimento</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de qualidade e avaliação do atendimento</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['qualidade-atendimento']}
+                    onCheckedChange={(checked) => handleRelatorioChange('qualidade-atendimento', checked)}
+                  />
+                </div>
+
+                {/* Retenção de Clientes */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Retenção de Clientes</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de taxa de retenção e fidelização de clientes</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['retencao-clientes']}
+                    onCheckedChange={(checked) => handleRelatorioChange('retencao-clientes', checked)}
+                  />
+                </div>
+
+                {/* Crescimento da Receita */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                      <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Crescimento da Receita</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de crescimento e evolução da receita</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['crescimento-receita']}
+                    onCheckedChange={(checked) => handleRelatorioChange('crescimento-receita', checked)}
+                  />
+                </div>
+
+                {/* Market Share */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <PieChart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Market Share</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de participação no mercado</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['market-share']}
+                    onCheckedChange={(checked) => handleRelatorioChange('market-share', checked)}
+                  />
+                </div>
+
+                {/* Vendas por Região */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <MapPin className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Vendas por Região</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de vendas segmentadas por região geográfica</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['vendas-por-regiao']}
+                    onCheckedChange={(checked) => handleRelatorioChange('vendas-por-regiao', checked)}
+                  />
+                </div>
+
+                {/* Vendas por Canal */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                      <Monitor className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Vendas por Canal</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de vendas segmentadas por canal de vendas</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['vendas-por-canal']}
+                    onCheckedChange={(checked) => handleRelatorioChange('vendas-por-canal', checked)}
+                  />
+                </div>
+
+                {/* Vendas por Forma de Pagamento */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                      <CreditCard className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Vendas por Forma de Pagamento</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório de vendas segmentadas por forma de pagamento</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['vendas-por-forma-pagamento']}
+                    onCheckedChange={(checked) => handleRelatorioChange('vendas-por-forma-pagamento', checked)}
+                  />
+                </div>
+
+                {/* Ticket Médio por Cliente */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+                      <Receipt className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Ticket Médio por Cliente</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório do valor médio gasto por cliente</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['ticket-medio-cliente']}
+                    onCheckedChange={(checked) => handleRelatorioChange('ticket-medio-cliente', checked)}
+                  />
+                </div>
+
+                {/* Frequência de Compra */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-lg">
+                      <Repeat className="h-4 w-4 text-pink-600 dark:text-pink-400" />
+                    </div>
+                    <div>
+                      <Label className="font-medium">Frequência de Compra</Label>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Relatório da frequência de compras dos clientes</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={configuracoesPersonalizacao.relatorios['frequencia-compra']}
+                    onCheckedChange={(checked) => handleRelatorioChange('frequencia-compra', checked)}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-blue-800 dark:text-blue-200">
+                    <p className="font-medium">Implementação em etapas:</p>
+                    <p className="text-xs mt-1">
+                      Todos os relatórios do sistema foram implementados! 
+                      Atualmente: 71 de 71 relatórios configuráveis.
+                    </p>
                   </div>
                 </div>
               </div>

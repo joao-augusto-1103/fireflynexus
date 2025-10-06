@@ -1004,9 +1004,11 @@ const OSModule = ({ userId }) => {
     setBuscaCliente(valor);
     if (valor.length > 0) {
       const filtrados = clientes.filter(cliente => 
-        cliente.nome.toLowerCase().includes(valor.toLowerCase()) ||
+        // Excluir clientes inativos da busca
+        cliente.status !== 'inativo' &&
+        (cliente.nome.toLowerCase().includes(valor.toLowerCase()) ||
         cliente.telefone.includes(valor) ||
-        cliente.email?.toLowerCase().includes(valor.toLowerCase())
+        cliente.email?.toLowerCase().includes(valor.toLowerCase()))
       );
       setClientesFiltrados(filtrados);
       setMostrarSugestoes(filtrados.length > 0);

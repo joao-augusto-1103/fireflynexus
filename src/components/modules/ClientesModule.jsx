@@ -52,6 +52,7 @@ const ClientesModule = ({ userId }) => {
     empresa: '',
     website: '',
     foto: null,
+    status: 'ativo', // Campo para controlar se o cliente está ativo ou inativo
     redesSociais: {
       instagram: '',
       facebook: '',
@@ -88,6 +89,7 @@ const ClientesModule = ({ userId }) => {
         empresa: cliente.empresa || '',
         website: cliente.website || '',
         foto: cliente.foto || null,
+        status: cliente.status || 'ativo',
         redesSociais: {
           instagram: cliente.redesSociais?.instagram || '',
           facebook: cliente.redesSociais?.facebook || '',
@@ -114,6 +116,7 @@ const ClientesModule = ({ userId }) => {
         empresa: '',
         website: '',
         foto: null,
+        status: 'ativo',
         redesSociais: {
           instagram: '',
           facebook: '',
@@ -194,6 +197,31 @@ const ClientesModule = ({ userId }) => {
     }
   };
 
+  const handleToggleStatus = async (cliente) => {
+    // Verificar permissão de edição
+    if (!canEdit('clientes')) return;
+    
+    try {
+      const novoStatus = cliente.status === 'ativo' ? 'inativo' : 'ativo';
+      const clienteAtualizado = { ...cliente, status: novoStatus };
+      
+      await save(clienteAtualizado, cliente.id);
+      
+      console.log('[Clientes] Status do cliente alterado:', cliente.nome, 'para', novoStatus);
+      toast({
+        title: "Status alterado!",
+        description: `Cliente "${cliente.nome}" foi ${novoStatus === 'ativo' ? 'ativado' : 'inativado'} com sucesso!`
+      });
+    } catch (error) {
+      console.error('[Clientes] Erro ao alterar status do cliente:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao alterar status do cliente. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleDeleteClick = (cliente) => {
     // Verificar permissão de exclusão
     if (!canDelete('clientes')) return;
@@ -256,6 +284,18 @@ const ClientesModule = ({ userId }) => {
     const ultimaCompra = todasOrdens.length > 0 ? 
       new Date(Math.max(...todasOrdens.map(ordem => new Date(ordem.createdAt)))) : null;
     
+    // Se o cliente tem status manual definido, usar ele
+    if (cliente.status && (cliente.status === 'ativo' || cliente.status === 'inativo')) {
+      return {
+        totalCompras,
+        totalGasto,
+        ultimaCompra,
+        ticketMedio: totalCompras > 0 ? totalGasto / totalCompras : 0,
+        status: cliente.status
+      };
+    }
+    
+    // Caso contrário, calcular status automaticamente
     return {
       totalCompras,
       totalGasto,
@@ -531,7 +571,7 @@ const ClientesModule = ({ userId }) => {
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-full">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-full">
               <div>
                           <Label htmlFor="nome">Nome Completo *</Label>
                 <Input
@@ -553,6 +593,18 @@ const ClientesModule = ({ userId }) => {
                               <SelectItem value="fornecedor">Fornecedor</SelectItem>
                               <SelectItem value="parceiro">Parceiro</SelectItem>
                               <SelectItem value="vip">VIP</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="status">Status</Label>
+                          <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ativo">Ativo</SelectItem>
+                              <SelectItem value="inativo">Inativo</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -993,6 +1045,23 @@ const ClientesModule = ({ userId }) => {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleStatus(cliente)}
+                          className={`h-8 w-8 ${stats.status === 'inativo' ? 'text-green-500 hover:text-green-700' : 'text-orange-500 hover:text-orange-700'}`}
+                          title={stats.status === 'inativo' ? 'Ativar cliente' : 'Inativar cliente'}
+                        >
+                          {stats.status === 'inativo' ? (
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          ) : (
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          )}
+                        </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -1110,6 +1179,23 @@ const ClientesModule = ({ userId }) => {
                             className="h-8 w-8"
                           >
                             <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleToggleStatus(cliente)}
+                            className={`h-8 w-8 ${stats.status === 'inativo' ? 'text-green-500 hover:text-green-700' : 'text-orange-500 hover:text-orange-700'}`}
+                            title={stats.status === 'inativo' ? 'Ativar cliente' : 'Inativar cliente'}
+                          >
+                            {stats.status === 'inativo' ? (
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            ) : (
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            )}
                           </Button>
                           <Button
                             variant="ghost"

@@ -455,9 +455,11 @@ const FinanceiroModule = ({ userId }) => {
     }
 
     const filtrados = clientes.filter(cliente => 
-      cliente.nome.toLowerCase().includes(termo.toLowerCase()) ||
+      // Excluir clientes inativos da busca
+      cliente.status !== 'inativo' &&
+      (cliente.nome.toLowerCase().includes(termo.toLowerCase()) ||
       (cliente.telefone && cliente.telefone.includes(termo)) ||
-      (cliente.email && cliente.email.toLowerCase().includes(termo.toLowerCase()))
+      (cliente.email && cliente.email.toLowerCase().includes(termo.toLowerCase())))
     );
     
     setClientesFiltrados(filtrados.slice(0, 5)); // Limitar a 5 resultados

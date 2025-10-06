@@ -612,9 +612,11 @@ const OVModule = ({ userId }) => {
     setBuscaCliente(termo);
     if (termo.length > 0) {
       const filtrados = clientes.filter(c => 
-        c.nome.toLowerCase().includes(termo.toLowerCase()) ||
+        // Excluir clientes inativos da busca
+        c.status !== 'inativo' &&
+        (c.nome.toLowerCase().includes(termo.toLowerCase()) ||
         c.telefone.includes(termo) ||
-        c.email?.toLowerCase().includes(termo.toLowerCase())
+        c.email?.toLowerCase().includes(termo.toLowerCase()))
       );
       setClientesFiltrados(filtrados);
       setMostrarSugestoesCliente(true);

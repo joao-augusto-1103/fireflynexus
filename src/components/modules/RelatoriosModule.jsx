@@ -102,7 +102,8 @@ import {
   useCategorias, 
   useFinanceiro,
   useCaixa,
-  usePermissions
+  usePermissions,
+  useConfiguracao
 } from '@/lib/hooks/useFirebase';
 
 // Importar componentes de gráficos
@@ -224,6 +225,7 @@ const RelatoriosModule = () => {
   const categoriasHook = useCategorias();
   const financeiroHook = useFinanceiro();
   const caixaHook = useCaixa();
+  const { config: configuracoes } = useConfiguracao();
   
   const { data: clientes = [] } = clientesHook;
   const { data: ordensServico = [] } = osHook;
@@ -536,6 +538,17 @@ const RelatoriosModule = () => {
     { id: 'crescimento-receita', title: 'Crescimento da Receita', category: 'Performance', icon: TrendingUp, color: 'bg-emerald-500' },
     { id: 'market-share', title: 'Market Share', category: 'Performance', icon: PieChart, color: 'bg-cyan-500' }
   ];
+
+  // Filtrar relatórios baseado nas configurações de personalização
+  const relatoriosHabilitados = relatoriosLista.filter(relatorio => {
+    // Se não há configurações carregadas, mostrar todos os relatórios
+    if (!configuracoes?.relatorios) {
+      return true;
+    }
+    
+    // Verificar se o relatório está habilitado nas configurações
+    return configuracoes.relatorios[relatorio.id] === true;
+  });
 
   // Função para aplicar período pré-definido
   const aplicarPeriodo = (periodo) => {
@@ -2789,15 +2802,15 @@ const RelatoriosModule = () => {
     });
   };
 
-  // Filtrar relatórios por categoria e busca
-  const relatoriosFiltrados = relatoriosLista.filter(relatorio => {
+  // Filtrar relatórios por categoria e busca (baseado nos relatórios habilitados)
+  const relatoriosFiltrados = relatoriosHabilitados.filter(relatorio => {
     const matchesCategory = categoryFilter === 'all' || relatorio.category === categoryFilter;
     const matchesSearch = relatorio.title.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  // Obter categorias únicas
-  const categoriasDisponiveis = ['all', ...new Set(relatoriosLista.map(r => r.category))];
+  // Obter categorias únicas (baseado nos relatórios habilitados)
+  const categoriasDisponiveis = ['all', ...new Set(relatoriosHabilitados.map(r => r.category))];
 
   return (
     <div className="space-y-8">
